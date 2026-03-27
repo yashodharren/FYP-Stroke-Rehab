@@ -11,7 +11,31 @@ class MLPredictionService
     protected $timeout = 30;
 
     /**
-     * Predict recovery probability for a patient
+     * Predict recovery probability for a patient using IST clinical features
+     *
+     * @param array $clinicalData IST dataset features
+     * @return array
+     * @throws Exception
+     */
+    public function predictRecoveryWithISTData(array $clinicalData): array
+    {
+        try {
+            $response = Http::timeout($this->timeout)
+                ->post("{$this->baseUrl}/predict", $clinicalData);
+
+            if ($response->failed()) {
+                throw new Exception("ML Service returned error: {$response->status()}");
+            }
+
+            return $response->json();
+        } catch (Exception $e) {
+            \Log::error('ML Prediction Error: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Predict recovery probability for a patient (Legacy method)
      *
      * @param int $age
      * @param string $strokeType

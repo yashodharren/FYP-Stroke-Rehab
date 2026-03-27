@@ -25,14 +25,6 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function patients()
-    {
-        $clinician = auth()->user();
-        $patients = Patient::where('clinician_id', $clinician->id)->with('user')->get();
-
-        return view('clinician.patients.index', ['patients' => $patients]);
-    }
-
     public function showPatient($patientId)
     {
         $clinician = auth()->user();
@@ -48,5 +40,10 @@ class DashboardController extends Controller
             'patient' => $patient,
             'rehabPlans' => $rehabPlans,
         ]);
+    }
+
+    public function appointments()
+    {
+        return view('clinician.appointments.index');
     }
 }

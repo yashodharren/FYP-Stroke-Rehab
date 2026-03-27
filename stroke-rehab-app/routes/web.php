@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Clinician\DashboardController as ClinicianDashboardController;
 use App\Http\Controllers\Clinician\PlanGeneratorController;
+use App\Http\Controllers\Clinician\PatientManagementController;
 use App\Http\Controllers\Patient\DashboardController as PatientDashboardController;
 use Illuminate\Support\Facades\Auth;
 
@@ -66,15 +67,29 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('clinician')->name('clinician.')->middleware('clinician')->group(function () {
         Route::get('/dashboard', [ClinicianDashboardController::class, 'index'])->name('dashboard');
-        Route::get('/patients', [ClinicianDashboardController::class, 'patients'])->name('patients.index');
-        Route::get('/patients/{patient}', [ClinicianDashboardController::class, 'showPatient'])->name('patients.show');
+
+        Route::prefix('patients')->name('patients.')->group(function () {
+            Route::get('/', [PatientManagementController::class, 'index'])->name('index');
+            Route::get('/create', [PatientManagementController::class, 'createForm'])->name('create');
+            Route::post('/store', [PatientManagementController::class, 'store'])->name('store');
+            Route::post('/{userId}/assign', [PatientManagementController::class, 'assign'])->name('assign');
+            Route::delete('/{patient}/remove', [PatientManagementController::class, 'remove'])->name('remove');
+            Route::get('/{patient}/edit', [PatientManagementController::class, 'editForm'])->name('edit');
+            Route::put('/{patient}', [PatientManagementController::class, 'update'])->name('update');
+            Route::get('/{patient}', [ClinicianDashboardController::class, 'showPatient'])->name('show');
+        });
 
         Route::prefix('plans')->name('plans.')->group(function () {
+            Route::get('/', [PlanGeneratorController::class, 'indexPlans'])->name('index');
             Route::get('/create/{patient}', [PlanGeneratorController::class, 'create'])->name('create');
             Route::post('/store/{patient}', [PlanGeneratorController::class, 'store'])->name('store');
             Route::get('/{plan}/edit', [PlanGeneratorController::class, 'edit'])->name('edit');
             Route::post('/{plan}/add-exercise', [PlanGeneratorController::class, 'addExercise'])->name('add-exercise');
             Route::post('/{plan}/publish', [PlanGeneratorController::class, 'publish'])->name('publish');
+        });
+
+        Route::prefix('appointments')->name('appointments.')->group(function () {
+            Route::get('/', [ClinicianDashboardController::class, 'appointments'])->name('index');
         });
     });
 

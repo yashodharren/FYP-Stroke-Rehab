@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -25,11 +26,11 @@ class PatientsTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('stroke_type')
-                    ->searchable(),
+                    ->badge(),
                 TextColumn::make('deficit_area')
-                    ->searchable(),
+                    ->badge(),
                 TextColumn::make('recovery_status')
-                    ->searchable(),
+                    ->badge(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -38,6 +39,32 @@ class PatientsTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('gender')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('rsbp')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('stroke_subtype')
+                    ->searchable(),
+                TextColumn::make('conscious_state')
+                    ->searchable(),
+                IconColumn::make('rdef1')
+                    ->boolean(),
+                IconColumn::make('rdef2')
+                    ->boolean(),
+                IconColumn::make('rdef3')
+                    ->boolean(),
+                IconColumn::make('rdef4')
+                    ->boolean(),
+                IconColumn::make('rdef5')
+                    ->boolean(),
+                IconColumn::make('rdef6')
+                    ->boolean(),
+                IconColumn::make('rdef7')
+                    ->boolean(),
+                IconColumn::make('rdef8')
+                    ->boolean(),
             ])
             ->filters([
                 //

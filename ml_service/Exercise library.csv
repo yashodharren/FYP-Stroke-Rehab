@@ -1,0 +1,11 @@
+Exercise ID,Name,Target Deficit,Body Region,Difficulty (1−5),Equipment,Instructions,Progression/Reps,Safety/Contraindications
+EXE-001,Shoulder Shrug,Strength/ROM,Upper Limb,1,None,Sit straight; raise shoulders toward ears; hold for 3 seconds.,3 sets of 10 reps,"Avoid if shoulder ""hikes"" excessively."
+EXE-002,Hand & Wrist Stretch,Flexibility,Upper Limb,1,None,Place palms together; push left hand against right; hold for 3 seconds.,5 reps per side,Stop if experiencing sharp wrist pain.
+EXE-003,Seated Marching,Mobility,Lower Limb,2,Chair,"While seated, lift one knee as if marching; hold for 2 seconds.",2 sets of 15 reps,Ensure chair is stable and has a backrest.
+EXE-004,Towel Slide,Range of Motion,Upper Limb,2,"Towel, Table",Place towel under hand on table; slide forward and back with control.,3 sets of 10 reps,Do not force the stretch beyond comfort.
+EXE-005,Sit-to-Stand,Functional Strength,Lower Limb,3,Sturdy Chair,Rise from a seated position to standing using even weight on both legs.,3 sets of 10 reps,Use armrests for support if balance is unstable.
+EXE-006,Finger Tapping,Fine Motor,Upper Limb,3,None,Tap each finger against the thumb in a sequence (index to pinky).,2 minutes per hand,"Focus on isolation, not speed."
+EXE-007,Wall Push-ups,Strength,Core/Upper,3,Wall,Stand facing wall; place palms on wall; lean in and push away.,3 sets of 8 reps,Ensure feet are firmly planted.
+EXE-008,Squeeze Ball,Grip Strength,Upper Limb,2,Tennis Ball,Hold ball in affected hand; squeeze as hard as possible for 5 seconds.,3 sets of 5 reps,Relax hand fully between squeezes.
+EXE-009,Heel-to-Toe Stand,Balance,Lower Limb,4,Countertop,Stand with one foot directly in front of the other (tandem); hold balance.,Hold for 30 seconds,Always perform near a grab bar or counter.
+EXE-010,Single Leg Stance,Balance,Lower Limb,5,None,Lift one leg and stand on the other; hold for as long as possible.,Hold for 30−60 sec,Avoid if recent fall history exists without a carer.

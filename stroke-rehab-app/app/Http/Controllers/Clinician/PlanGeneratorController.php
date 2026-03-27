@@ -12,6 +12,14 @@ use Illuminate\Http\Request;
 
 class PlanGeneratorController extends Controller
 {
+    public function indexPlans()
+    {
+        $clinician = auth()->user();
+        $rehabPlans = RehabPlan::where('clinician_id', $clinician->id)->with('patient')->get();
+
+        return view('clinician.plans.index', ['rehabPlans' => $rehabPlans]);
+    }
+
     public function create($patientId)
     {
         $clinician = auth()->user();

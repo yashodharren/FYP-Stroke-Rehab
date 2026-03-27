@@ -10,10 +10,30 @@ class Patient extends Model
         'user_id',
         'clinician_id',
         'age',
-        'stroke_type',
-        'deficit_area',
-        'medical_history',
         'recovery_status',
+        'gender',
+        'rsbp',
+        'stroke_subtype',
+        'conscious_state',
+        'rdef1',
+        'rdef2',
+        'rdef3',
+        'rdef4',
+        'rdef5',
+        'rdef6',
+        'rdef7',
+        'rdef8',
+    ];
+
+    protected $casts = [
+        'rdef1' => 'boolean',
+        'rdef2' => 'boolean',
+        'rdef3' => 'boolean',
+        'rdef4' => 'boolean',
+        'rdef5' => 'boolean',
+        'rdef6' => 'boolean',
+        'rdef7' => 'boolean',
+        'rdef8' => 'boolean',
     ];
 
     public function user()
