@@ -1,0 +1,47 @@
+# Laravel
+/stroke-rehab-app/vendor/
+/stroke-rehab-app/node_modules/
+/stroke-rehab-app/.env
+/stroke-rehab-app/.env.local
+/stroke-rehab-app/.env.*.local
+/stroke-rehab-app/storage/logs/
+/stroke-rehab-app/storage/framework/cache/
+/stroke-rehab-app/storage/framework/sessions/
+/stroke-rehab-app/storage/framework/views/
+/stroke-rehab-app/bootstrap/cache/
+/stroke-rehab-app/public/storage
+/stroke-rehab-app/public/build
+/stroke-rehab-app/.DS_Store
+
+# Python
+/ml_service/venv/
+/ml_service/__pycache__/
+/ml_service/*.pyc
+/ml_service/.env
+/ml_service/.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Composer
+composer.lock
+
+# Node
+package-lock.json
+yarn.lock
+
+# Misc
+.env.example.local
+check_users.php
