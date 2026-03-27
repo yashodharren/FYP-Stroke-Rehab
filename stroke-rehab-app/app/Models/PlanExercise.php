@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class PlanExercise extends Model
+{
+    protected $fillable = [
+        'rehab_plan_id',
+        'exercise_id',
+        'day_of_week',
+        'frequency_per_week',
+        'scheduled_time',
+        'custom_repetitions',
+        'custom_duration_minutes',
+        'notes',
+        'is_completed',
+    ];
+
+    protected $casts = [
+        'scheduled_time' => 'time',
+        'is_completed' => 'boolean',
+    ];
+
+    public function rehabPlan()
+    {
+        return $this->belongsTo(RehabPlan::class);
+    }
+
+    public function exercise()
+    {
+        return $this->belongsTo(Exercise::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(PatientFeedback::class);
+    }
+}

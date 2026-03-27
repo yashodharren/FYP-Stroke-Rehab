@@ -1,0 +1,86 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Clinician\DashboardController as ClinicianDashboardController;
+use App\Http\Controllers\Clinician\PlanGeneratorController;
+use App\Http\Controllers\Patient\DashboardController as PatientDashboardController;
+use Illuminate\Support\Facades\Auth;
+
+Route::redirect('/', '/dashboard');
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login')->middleware('guest');
+
+Route::post('/login', function () {
+    $credentials = request()->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if (Auth::attempt($credentials)) {
+        request()->session()->regenerate();
+        return redirect('/dashboard');
+    }
+
+    return back()->withErrors([
+        'email' => 'The provided credentials do not match our records.',
+    ])->onlyInput('email');
+})->middleware('guest');
+
+Route::post('/logout', function () {
+    Auth::logout();
+    request()->session()->invalidate();
+    request()->session()->regenerateToken();
+    return redirect('/login');
+})->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+
+        if ($user->role === 'admin') {
+            return redirect('/admin');
+        } elseif ($user->role === 'clinician') {
+            return redirect('/clinician/dashboard');
+        } elseif ($user->role === 'patient') {
+            return redirect('/patient/dashboard');
+        }
+
+        abort(403, 'Unknown role');
+    });
+
+    Route::get('/test-role', function () {
+        $user = auth()->user();
+        return response()->json([
+            'user' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'accessible_routes' => [
+                'admin' => $user->role === 'admin' ? '/admin' : 'Not accessible',
+                'clinician_dashboard' => $user->role === 'clinician' ? '/clinician/dashboard' : 'Not accessible',
+                'patient_dashboard' => $user->role === 'patient' ? '/patient/dashboard' : 'Not accessible',
+            ]
+        ]);
+    });
+
+    Route::prefix('clinician')->name('clinician.')->middleware('clinician')->group(function () {
+        Route::get('/dashboard', [ClinicianDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/patients', [ClinicianDashboardController::class, 'patients'])->name('patients.index');
+        Route::get('/patients/{patient}', [ClinicianDashboardController::class, 'showPatient'])->name('patients.show');
+
+        Route::prefix('plans')->name('plans.')->group(function () {
+            Route::get('/create/{patient}', [PlanGeneratorController::class, 'create'])->name('create');
+            Route::post('/store/{patient}', [PlanGeneratorController::class, 'store'])->name('store');
+            Route::get('/{plan}/edit', [PlanGeneratorController::class, 'edit'])->name('edit');
+            Route::post('/{plan}/add-exercise', [PlanGeneratorController::class, 'addExercise'])->name('add-exercise');
+            Route::post('/{plan}/publish', [PlanGeneratorController::class, 'publish'])->name('publish');
+        });
+    });
+
+    Route::prefix('patient')->name('patient.')->middleware('patient')->group(function () {
+        Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/schedule', [PatientDashboardController::class, 'schedule'])->name('schedule');
+        Route::post('/feedback/{planExercise}', [PatientDashboardController::class, 'submitFeedback'])->name('feedback');
+    });
+});
