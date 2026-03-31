@@ -12,6 +12,7 @@ class RehabPlan extends Model
         'plan_name',
         'description',
         'recovery_probability',
+        'ml_confidence_score',
         'difficulty_level',
         'start_date',
         'end_date',

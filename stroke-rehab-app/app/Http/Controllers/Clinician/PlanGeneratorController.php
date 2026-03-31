@@ -32,17 +32,31 @@ class PlanGeneratorController extends Controller
         $mlService = new MLPredictionService();
         $mlAvailable = $mlService->isServiceAvailable();
         $mlPrediction = null;
+        $mlError = null;
 
         if ($mlAvailable) {
             try {
-                $mlPrediction = $mlService->predictRecovery(
-                    $patient->age,
-                    $patient->stroke_type,
-                    $patient->deficit_area,
-                    $patient->medical_history
-                );
+                // Prepare IST clinical data for ML prediction
+                $clinicalData = [
+                    'age' => $patient->age,
+                    'gender' => $patient->gender,
+                    'rsbp' => $patient->rsbp,
+                    'stroke_subtype' => $patient->stroke_subtype,
+                    'conscious_state' => $patient->conscious_state,
+                    'rdef1' => (bool) $patient->rdef1,
+                    'rdef2' => (bool) $patient->rdef2,
+                    'rdef3' => (bool) $patient->rdef3,
+                    'rdef4' => (bool) $patient->rdef4,
+                    'rdef5' => (bool) $patient->rdef5,
+                    'rdef6' => (bool) $patient->rdef6,
+                    'rdef7' => (bool) $patient->rdef7,
+                    'rdef8' => (bool) $patient->rdef8,
+                ];
+
+                $mlPrediction = $mlService->predictRecoveryWithISTData($clinicalData);
             } catch (\Exception $e) {
                 \Log::warning('ML prediction failed: ' . $e->getMessage());
+                $mlError = $e->getMessage();
             }
         }
 
@@ -50,6 +64,7 @@ class PlanGeneratorController extends Controller
             'patient' => $patient,
             'mlPrediction' => $mlPrediction,
             'mlAvailable' => $mlAvailable,
+            'mlError' => $mlError,
         ]);
     }
 
@@ -66,6 +81,7 @@ class PlanGeneratorController extends Controller
             'plan_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'recovery_probability' => 'nullable|numeric|min:0|max:1',
+            'ml_confidence_score' => 'nullable|numeric|min:0|max:1',
             'difficulty_level' => 'required|in:1,2,3,4,5',
             'start_date' => 'required|date',
             'end_date' => 'nullable|date|after:start_date',
@@ -77,6 +93,7 @@ class PlanGeneratorController extends Controller
             'plan_name' => $validated['plan_name'],
             'description' => $validated['description'],
             'recovery_probability' => $validated['recovery_probability'],
+            'ml_confidence_score' => $validated['ml_confidence_score'],
             'difficulty_level' => $validated['difficulty_level'],
             'start_date' => $validated['start_date'],
             'end_date' => $validated['end_date'],

@@ -1,10 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import joblib
 import numpy as np
+import pandas as pd
 import os
+import warnings
+
+# Suppress scikit-learn version warnings
+warnings.filterwarnings('ignore', category=UserWarning)
 
 app = FastAPI(title="Stroke Rehabilitation ML Service", version="1.0.0")
 
@@ -17,22 +22,52 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Model path - will be updated when you add your .joblib file
-MODEL_PATH = "models/stroke_recovery_model.joblib"
+# Model path - use absolute path
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "stroke_recovery_model.joblib")
 
 # Load model if it exists
 model = None
 if os.path.exists(MODEL_PATH):
     try:
         model = joblib.load(MODEL_PATH)
-        print(f"Model loaded successfully from {MODEL_PATH}")
+        print(f"✓ Model loaded successfully from {MODEL_PATH}")
     except Exception as e:
-        print(f"Error loading model: {e}")
+        print(f"✗ Error loading model: {e}")
 else:
-    print(f"Model file not found at {MODEL_PATH}")
+    print(f"✗ Model file not found at {MODEL_PATH}")
     print("The service will run in demo mode without the ML model")
 
+# Load exercise library - use absolute path
+EXERCISE_LIBRARY_PATH = os.path.join(os.path.dirname(__file__), "Exercise library.csv")
+exercise_library = None
+if os.path.exists(EXERCISE_LIBRARY_PATH):
+    try:
+        exercise_library = pd.read_csv(EXERCISE_LIBRARY_PATH)
+        print(f"✓ Exercise library loaded successfully ({len(exercise_library)} exercises)")
+    except Exception as e:
+        print(f"✗ Error loading exercise library: {e}")
+else:
+    print(f"✗ Exercise library not found at {EXERCISE_LIBRARY_PATH}")
 
+
+# IST Clinical Features Data Model
+class ISTClinicalData(BaseModel):
+    age: int
+    gender: int  # 0=Female, 1=Male
+    rsbp: Optional[int] = None  # Systolic Blood Pressure
+    stroke_subtype: str  # TACS, PACS, LACS, POCS, OTH
+    conscious_state: str  # Alert, Drowsy, Unconscious
+    rdef1: bool = False  # Face Deficit
+    rdef2: bool = False  # Arm/Hand Deficit
+    rdef3: bool = False  # Leg/Foot Deficit
+    rdef4: bool = False  # Dysphasia (Speech)
+    rdef5: bool = False  # Hemianopia (Vision)
+    rdef6: bool = False  # Visuospatial Disorder
+    rdef7: bool = False  # Brainstem/Cerebellar Signs
+    rdef8: bool = False  # Other Deficits
+
+
+# Legacy PatientData model for backward compatibility
 class PatientData(BaseModel):
     age: int
     stroke_type: str  # 'ischemic', 'hemorrhagic', 'tia'
@@ -40,71 +75,226 @@ class PatientData(BaseModel):
     medical_history: Optional[str] = None
 
 
+# Exercise response model
+class ExerciseRecommendation(BaseModel):
+    exercise_id: str
+    name: str
+    target_deficit: str
+    body_region: str
+    difficulty: int
+    instructions: str
+    progression_reps: str
+    safety_notes: str
+
+
+# Recovery Prediction response model
 class RecoveryPrediction(BaseModel):
     recovery_probability: float
     difficulty_level: int
-    recommended_exercises: list
+    recommended_exercises: List[ExerciseRecommendation]
     confidence_score: float
+    clinical_notes: str
+    model_version: str = "1.0"
 
 
-def encode_stroke_type(stroke_type: str) -> int:
-    """Encode stroke type to numeric value"""
-    mapping = {'ischemic': 0, 'hemorrhagic': 1, 'tia': 2}
-    return mapping.get(stroke_type, 0)
-
-
-def encode_deficit_area(deficit_area: str) -> int:
-    """Encode deficit area to numeric value"""
-    mapping = {'arm': 0, 'leg': 1, 'both': 2, 'speech': 3, 'cognitive': 4}
-    return mapping.get(deficit_area, 0)
-
-
-def determine_difficulty_level(recovery_probability: float) -> int:
-    """Determine difficulty level based on recovery probability"""
-    if recovery_probability < 0.2:
-        return 1  # Very Easy
-    elif recovery_probability < 0.4:
-        return 2  # Easy
-    elif recovery_probability < 0.6:
-        return 3  # Moderate
-    elif recovery_probability < 0.8:
-        return 4  # Hard
-    else:
-        return 5  # Very Hard
-
-
-def get_recommended_exercises(difficulty_level: int, deficit_area: str) -> list:
-    """Get recommended exercises based on difficulty and deficit area"""
-    exercise_mapping = {
-        ('arm', 1): ['Hand Grip Exercises', 'Arm Raises'],
-        ('arm', 2): ['Arm Raises', 'Resistance Band Exercises'],
-        ('arm', 3): ['Resistance Band Exercises'],
-        ('arm', 4): ['Resistance Band Exercises'],
-        ('arm', 5): ['Resistance Band Exercises'],
-        ('leg', 1): ['Seated Marching', 'Walking with Support'],
-        ('leg', 2): ['Leg Lifts', 'Walking with Support'],
-        ('leg', 3): ['Leg Lifts'],
-        ('leg', 4): ['Leg Lifts'],
-        ('leg', 5): ['Leg Lifts'],
-        ('both', 1): ['Seated Marching', 'Arm Raises'],
-        ('both', 2): ['Leg Lifts', 'Arm Raises'],
-        ('both', 3): ['Leg Lifts', 'Resistance Band Exercises'],
-        ('both', 4): ['Leg Lifts', 'Resistance Band Exercises'],
-        ('both', 5): ['Leg Lifts', 'Resistance Band Exercises'],
-        ('speech', 1): ['Speech Exercises'],
-        ('speech', 2): ['Speech Exercises'],
-        ('speech', 3): ['Speech Exercises'],
-        ('speech', 4): ['Speech Exercises'],
-        ('speech', 5): ['Speech Exercises'],
-        ('cognitive', 1): ['Cognitive Exercises'],
-        ('cognitive', 2): ['Cognitive Exercises'],
-        ('cognitive', 3): ['Cognitive Exercises'],
-        ('cognitive', 4): ['Cognitive Exercises'],
-        ('cognitive', 5): ['Cognitive Exercises'],
+# IST Feature Encoding Functions
+def encode_stroke_subtype_onehot(stroke_subtype: str) -> dict:
+    """Encode IST stroke subtype to one-hot encoding (matches training data)"""
+    # Initialize all to 0
+    encoding = {
+        'TYPE_TACS': 0,
+        'TYPE_PACS': 0,
+        'TYPE_LACS': 0,
+        'TYPE_POCS': 0,
+        'TYPE_OTH': 0
     }
     
-    key = (deficit_area, difficulty_level)
-    return exercise_mapping.get(key, ['Seated Marching', 'Hand Grip Exercises'])
+    # Set the appropriate type to 1
+    mapping = {
+        'TACS': 'TYPE_TACS',
+        'PACS': 'TYPE_PACS',
+        'LACS': 'TYPE_LACS',
+        'POCS': 'TYPE_POCS',
+        'OTH': 'TYPE_OTH'
+    }
+    
+    key = mapping.get(stroke_subtype, 'TYPE_OTH')
+    encoding[key] = 1
+    return encoding
+
+
+def encode_conscious_state_onehot(conscious_state: str) -> dict:
+    """Encode conscious state to one-hot encoding (matches training data)"""
+    # Initialize all to 0
+    encoding = {
+        'CONSC_F': 0,  # Fully alert
+        'CONSC_D': 0,  # Drowsy
+        'CONSC_U': 0   # Unconscious
+    }
+    
+    # Set the appropriate state to 1
+    mapping = {
+        'Alert': 'CONSC_F',
+        'Drowsy': 'CONSC_D',
+        'Unconscious': 'CONSC_U'
+    }
+    
+    key = mapping.get(conscious_state, 'CONSC_F')
+    encoding[key] = 1
+    return encoding
+
+
+def determine_difficulty_level(recovery_probability: float, rsbp: Optional[int] = None) -> int:
+    """Determine difficulty level based on recovery probability and blood pressure"""
+    # Base difficulty from recovery probability
+    if recovery_probability < 0.2:
+        base_difficulty = 1  # Very Easy
+    elif recovery_probability < 0.4:
+        base_difficulty = 2  # Easy
+    elif recovery_probability < 0.6:
+        base_difficulty = 3  # Moderate
+    elif recovery_probability < 0.8:
+        base_difficulty = 4  # Hard
+    else:
+        base_difficulty = 5  # Very Hard
+    
+    # Apply blood pressure safety rule
+    if rsbp and rsbp > 160:
+        # Cap difficulty at 2 for high blood pressure
+        return min(base_difficulty, 2)
+    
+    return base_difficulty
+
+
+def get_deficit_to_body_region_mapping() -> dict:
+    """Map functional deficits to body regions and exercise types"""
+    return {
+        'rdef1': {'region': 'Face', 'type': 'Facial exercises'},
+        'rdef2': {'region': 'Upper Limb', 'type': 'Strength/ROM'},
+        'rdef3': {'region': 'Lower Limb', 'type': 'Mobility'},
+        'rdef4': {'region': 'Speech', 'type': 'Speech therapy'},
+        'rdef5': {'region': 'Vision', 'type': 'Visual tracking'},
+        'rdef6': {'region': 'Coordination', 'type': 'Balance'},
+        'rdef7': {'region': 'Balance', 'type': 'Balance'},
+        'rdef8': {'region': 'General', 'type': 'General'}
+    }
+
+
+def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_level: int) -> List[ExerciseRecommendation]:
+    """
+    Select personalized exercises from library based on deficits and difficulty level
+    """
+    if exercise_library is None:
+        return []
+    
+    selected_exercises = []
+    deficit_mapping = get_deficit_to_body_region_mapping()
+    
+    # Identify active deficits
+    deficits = []
+    if clinical_data.rdef1:
+        deficits.append(('rdef1', 'Face Deficit'))
+    if clinical_data.rdef2:
+        deficits.append(('rdef2', 'Arm/Hand Deficit'))
+    if clinical_data.rdef3:
+        deficits.append(('rdef3', 'Leg/Foot Deficit'))
+    if clinical_data.rdef4:
+        deficits.append(('rdef4', 'Dysphasia (Speech)'))
+    if clinical_data.rdef5:
+        deficits.append(('rdef5', 'Hemianopia (Vision)'))
+    if clinical_data.rdef6:
+        deficits.append(('rdef6', 'Visuospatial Disorder'))
+    if clinical_data.rdef7:
+        deficits.append(('rdef7', 'Brainstem/Cerebellar Signs'))
+    if clinical_data.rdef8:
+        deficits.append(('rdef8', 'Other Deficits'))
+    
+    # If no deficits, return general exercises
+    if not deficits:
+        deficits = [('general', 'General Recovery')]
+    
+    # Select exercises for each deficit
+    for deficit_key, deficit_name in deficits:
+        region_info = deficit_mapping.get(deficit_key, {'region': 'General', 'type': 'General'})
+        body_region = region_info['region']
+        
+        # Filter exercises by body region and difficulty
+        matching_exercises = exercise_library[
+            (exercise_library['Body Region'].str.contains(body_region, case=False, na=False)) &
+            (exercise_library['Difficulty (1−5)'] <= difficulty_level)
+        ]
+        
+        # If no exact matches, try broader search
+        if matching_exercises.empty:
+            matching_exercises = exercise_library[
+                exercise_library['Difficulty (1−5)'] <= difficulty_level
+            ]
+        
+        # Select up to 2 exercises per deficit
+        for idx, (_, exercise) in enumerate(matching_exercises.iterrows()):
+            if idx >= 2:
+                break
+            
+            try:
+                selected_exercises.append(ExerciseRecommendation(
+                    exercise_id=exercise.get('Exercise ID', f'EXE-{idx:03d}'),
+                    name=exercise.get('Name', 'Unknown Exercise'),
+                    target_deficit=deficit_name,
+                    body_region=body_region,
+                    difficulty=int(exercise.get('Difficulty (1−5)', difficulty_level)),
+                    instructions=exercise.get('Instructions', 'Follow standard protocol'),
+                    progression_reps=exercise.get('Progression/Reps', '3 sets of 10 reps'),
+                    safety_notes=exercise.get('Safety/Contraindications', 'Follow safety guidelines')
+                ))
+            except Exception as e:
+                print(f"Error processing exercise: {e}")
+                continue
+    
+    # Return up to 5 exercises total
+    return selected_exercises[:5]
+
+
+def generate_clinical_notes(clinical_data: ISTClinicalData, recovery_probability: float, difficulty_level: int) -> str:
+    """Generate clinical notes based on patient data and predictions"""
+    notes = []
+    
+    # Recovery probability assessment
+    if recovery_probability > 0.8:
+        notes.append("Patient shows excellent recovery potential.")
+    elif recovery_probability > 0.6:
+        notes.append("Patient shows good recovery potential.")
+    elif recovery_probability > 0.4:
+        notes.append("Patient shows moderate recovery potential.")
+    else:
+        notes.append("Patient shows limited recovery potential. Conservative approach recommended.")
+    
+    # Blood pressure assessment
+    if clinical_data.rsbp and clinical_data.rsbp > 160:
+        notes.append("⚠️ High systolic blood pressure (>160 mmHg). Conservative, low-intensity plan recommended. Frequent monitoring advised.")
+    
+    # Consciousness state assessment
+    if clinical_data.conscious_state == 'Unconscious':
+        notes.append("Patient is unconscious. Focus on passive exercises and caregiver involvement.")
+    elif clinical_data.conscious_state == 'Drowsy':
+        notes.append("Patient is drowsy. Shorter sessions with frequent breaks recommended.")
+    
+    # Stroke severity assessment
+    if clinical_data.stroke_subtype == 'TACS':
+        notes.append("Total Anterior Circulation Stroke (high severity). Extended rehabilitation period expected.")
+    elif clinical_data.stroke_subtype == 'LACS':
+        notes.append("Lacunar Stroke (small vessel). Better prognosis expected with appropriate rehabilitation.")
+    
+    # Deficit assessment
+    deficit_count = sum([
+        clinical_data.rdef1, clinical_data.rdef2, clinical_data.rdef3,
+        clinical_data.rdef4, clinical_data.rdef5, clinical_data.rdef6,
+        clinical_data.rdef7, clinical_data.rdef8
+    ])
+    
+    if deficit_count > 5:
+        notes.append(f"Multiple deficits detected ({deficit_count}). Comprehensive rehabilitation plan required.")
+    
+    return " ".join(notes) if notes else "Standard rehabilitation protocol recommended."
 
 
 @app.get("/")
@@ -114,97 +304,183 @@ async def root():
         "status": "running",
         "service": "Stroke Rehabilitation ML Service",
         "version": "1.0.0",
-        "model_loaded": model is not None
+        "model_loaded": model is not None,
+        "exercise_library_loaded": exercise_library is not None
     }
 
 
 @app.post("/predict", response_model=RecoveryPrediction)
-async def predict_recovery(patient_data: PatientData):
+async def predict_recovery_ist(clinical_data: ISTClinicalData):
     """
-    Predict recovery probability and recommend rehabilitation plan
+    Predict recovery probability and recommend personalized rehabilitation plan
+    using IST clinical features
     
     Args:
-        patient_data: Patient information including age, stroke type, and deficit area
+        clinical_data: IST dataset clinical features
     
     Returns:
-        RecoveryPrediction with probability, difficulty level, and recommended exercises
+        RecoveryPrediction with probability, difficulty level, exercises, and clinical notes
     """
     
-    if model is None:
-        # Demo mode: return simulated predictions
-        recovery_probability = simulate_prediction(patient_data)
-    else:
-        # Use actual ML model
-        try:
-            # Prepare features for model
-            features = np.array([[
-                patient_data.age,
-                encode_stroke_type(patient_data.stroke_type),
-                encode_deficit_area(patient_data.deficit_area)
-            ]])
-            
-            # Get prediction
-            recovery_probability = float(model.predict_proba(features)[0][1])
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+    try:
+        if model is None:
+            # Demo mode: return simulated predictions
+            recovery_probability = simulate_ist_prediction(clinical_data)
+            confidence_score = 0.75
+        else:
+            # Use actual ML model
+            try:
+                # Encode categorical features to match training data format
+                stroke_encoding = encode_stroke_subtype_onehot(clinical_data.stroke_subtype)
+                conscious_encoding = encode_conscious_state_onehot(clinical_data.conscious_state)
+                
+                # Prepare features in the exact order expected by the trained model
+                # Order: AGE, SEX, RSBP, RDEF1-8, TYPE_LACS, TYPE_OTH, TYPE_PACS, TYPE_POCS, TYPE_TACS, CONSC_D, CONSC_F, CONSC_U
+                features = np.array([[
+                    clinical_data.age,
+                    clinical_data.gender,
+                    clinical_data.rsbp if clinical_data.rsbp else 0,
+                    int(clinical_data.rdef1),
+                    int(clinical_data.rdef2),
+                    int(clinical_data.rdef3),
+                    int(clinical_data.rdef4),
+                    int(clinical_data.rdef5),
+                    int(clinical_data.rdef6),
+                    int(clinical_data.rdef7),
+                    int(clinical_data.rdef8),
+                    stroke_encoding['TYPE_LACS'],
+                    stroke_encoding['TYPE_OTH'],
+                    stroke_encoding['TYPE_PACS'],
+                    stroke_encoding['TYPE_POCS'],
+                    stroke_encoding['TYPE_TACS'],
+                    conscious_encoding['CONSC_D'],
+                    conscious_encoding['CONSC_F'],
+                    conscious_encoding['CONSC_U'],
+                ]])
+                
+                # Get prediction from Random Forest model
+                recovery_probability = float(model.predict_proba(features)[0][1])
+                
+                # Get confidence score (max probability from the model)
+                confidence_score = float(max(model.predict_proba(features)[0]))
+                
+            except Exception as e:
+                print(f"Model prediction error: {e}")
+                # Fallback to simulation
+                recovery_probability = simulate_ist_prediction(clinical_data)
+                confidence_score = 0.75
+        
+        # Determine difficulty level based on recovery probability and blood pressure
+        difficulty_level = determine_difficulty_level(recovery_probability, clinical_data.rsbp)
+        
+        # Select personalized exercises from library
+        recommended_exercises = select_exercises_from_library(clinical_data, difficulty_level)
+        
+        # Generate clinical notes
+        clinical_notes = generate_clinical_notes(clinical_data, recovery_probability, difficulty_level)
+        
+        return RecoveryPrediction(
+            recovery_probability=round(recovery_probability, 3),
+            difficulty_level=difficulty_level,
+            recommended_exercises=recommended_exercises,
+            confidence_score=round(confidence_score, 3),
+            clinical_notes=clinical_notes,
+            model_version="1.0"
+        )
     
-    # Determine difficulty level based on recovery probability
-    difficulty_level = determine_difficulty_level(recovery_probability)
-    
-    # Get recommended exercises
-    recommended_exercises = get_recommended_exercises(difficulty_level, patient_data.deficit_area)
-    
-    # Calculate confidence score
-    confidence_score = abs(recovery_probability - 0.5) * 2 + 0.5
-    
-    return RecoveryPrediction(
-        recovery_probability=round(recovery_probability, 2),
-        difficulty_level=difficulty_level,
-        recommended_exercises=recommended_exercises,
-        confidence_score=round(confidence_score, 2)
-    )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 
-def simulate_prediction(patient_data: PatientData) -> float:
+def simulate_ist_prediction(clinical_data: ISTClinicalData) -> float:
     """
     Simulate ML prediction when model is not available
-    Used for demo purposes
+    Used for demo purposes with IST clinical features
     """
     # Base probability
     base_prob = 0.5
     
     # Age factor (younger = better recovery)
-    age_factor = max(0, (80 - patient_data.age) / 80) * 0.3
+    age_factor = max(0, (80 - clinical_data.age) / 80) * 0.25
     
-    # Stroke type factor
-    stroke_factor = 0.1 if patient_data.stroke_type == 'ischemic' else -0.1
+    # Stroke subtype factor
+    stroke_factors = {
+        'TACS': -0.15,  # High severity
+        'PACS': -0.05,  # Partial
+        'LACS': 0.15,   # Better prognosis
+        'POCS': -0.05,  # Posterior
+        'OTH': 0.0      # Other
+    }
+    stroke_factor = stroke_factors.get(clinical_data.stroke_subtype, 0)
     
-    # Deficit area factor
-    deficit_factor = {
-        'arm': 0.15,
-        'leg': 0.1,
-        'both': -0.05,
-        'speech': 0.05,
-        'cognitive': 0.0
-    }.get(patient_data.deficit_area, 0)
+    # Conscious state factor
+    conscious_factors = {
+        'Alert': 0.1,
+        'Drowsy': -0.05,
+        'Unconscious': -0.15
+    }
+    conscious_factor = conscious_factors.get(clinical_data.conscious_state, 0)
+    
+    # Blood pressure factor
+    bp_factor = 0
+    if clinical_data.rsbp:
+        if clinical_data.rsbp > 160:
+            bp_factor = -0.1
+        elif clinical_data.rsbp < 120:
+            bp_factor = 0.05
+    
+    # Functional deficit factor (fewer deficits = better recovery)
+    deficit_count = sum([
+        clinical_data.rdef1, clinical_data.rdef2, clinical_data.rdef3,
+        clinical_data.rdef4, clinical_data.rdef5, clinical_data.rdef6,
+        clinical_data.rdef7, clinical_data.rdef8
+    ])
+    deficit_factor = -0.05 * deficit_count
     
     # Calculate final probability
-    probability = base_prob + age_factor + stroke_factor + deficit_factor
+    probability = base_prob + age_factor + stroke_factor + conscious_factor + bp_factor + deficit_factor
     
     # Clamp between 0 and 1
     return max(0.0, min(1.0, probability))
 
 
+# Legacy endpoint for backward compatibility
+@app.post("/predict-legacy", response_model=RecoveryPrediction)
+async def predict_recovery_legacy(patient_data: PatientData):
+    """
+    Legacy prediction endpoint (deprecated)
+    Use /predict with ISTClinicalData instead
+    """
+    # Convert legacy format to IST format
+    clinical_data = ISTClinicalData(
+        age=patient_data.age,
+        gender=0,  # Default
+        rsbp=None,
+        stroke_subtype='OTH',  # Default
+        conscious_state='Alert',  # Default
+        rdef1=False,
+        rdef2=patient_data.deficit_area in ['arm', 'both'],
+        rdef3=patient_data.deficit_area in ['leg', 'both'],
+        rdef4=patient_data.deficit_area == 'speech',
+        rdef5=False,
+        rdef6=False,
+        rdef7=False,
+        rdef8=patient_data.deficit_area == 'cognitive'
+    )
+    
+    return await predict_recovery_ist(clinical_data)
+
+
 @app.post("/batch-predict")
-async def batch_predict(patients: list[PatientData]):
+async def batch_predict(patients: list[ISTClinicalData]):
     """
     Predict recovery for multiple patients
     """
     predictions = []
     for patient in patients:
-        prediction = await predict_recovery(patient)
+        prediction = await predict_recovery_ist(patient)
         predictions.append(prediction)
-    return {"predictions": predictions}
+    return {"predictions": predictions, "count": len(predictions)}
 
 
 @app.get("/health")
@@ -213,7 +489,37 @@ async def health_check():
     return {
         "status": "healthy",
         "model_loaded": model is not None,
-        "service_version": "1.0.0"
+        "exercise_library_loaded": exercise_library is not None,
+        "service_version": "1.0.0",
+        "endpoints": {
+            "predict": "POST /predict (IST clinical features)",
+            "batch_predict": "POST /batch-predict",
+            "health": "GET /health",
+            "root": "GET /"
+        }
+    }
+
+
+@app.get("/model-info")
+async def model_info():
+    """Get information about the loaded model"""
+    if model is None:
+        return {
+            "status": "not_loaded",
+            "message": "ML model not loaded. Running in demo mode.",
+            "demo_mode": True
+        }
+    
+    return {
+        "status": "loaded",
+        "model_type": str(type(model).__name__),
+        "model_path": MODEL_PATH,
+        "demo_mode": False,
+        "features_expected": [
+            "age", "gender", "rsbp", "stroke_subtype_encoded",
+            "conscious_state_encoded", "rdef1", "rdef2", "rdef3",
+            "rdef4", "rdef5", "rdef6", "rdef7", "rdef8"
+        ]
     }
 
 
