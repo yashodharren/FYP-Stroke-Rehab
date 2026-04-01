@@ -55,15 +55,6 @@
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Professional Information</h2>
 
                     <div>
-                        <label for="license_number" class="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
-                        <input type="text" id="license_number" name="license_number" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('license_number') border-red-500 @enderror" placeholder="LIC-123456" value="{{ old('license_number') }}">
-                        <p class="text-gray-500 text-xs mt-1">Your medical/clinical license number</p>
-                        @error('license_number')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
                         <label for="specialization" class="block text-sm font-medium text-gray-700 mb-2">Specialization *</label>
                         <input type="text" id="specialization" name="specialization" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent @error('specialization') border-red-500 @enderror" placeholder="e.g., Physiotherapy, Neurology, Occupational Therapy" value="{{ old('specialization') }}">
                         @error('specialization')

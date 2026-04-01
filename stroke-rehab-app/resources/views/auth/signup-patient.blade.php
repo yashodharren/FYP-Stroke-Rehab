@@ -67,8 +67,8 @@
                             <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
                             <select id="gender" name="gender" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('gender') border-red-500 @enderror">
                                 <option value="">Select gender</option>
-                                <option value="0" @if(old('gender') == '0') selected @endif>Female</option>
-                                <option value="1" @if(old('gender') == '1') selected @endif>Male</option>
+                                <option value="0" @if(old('gender')=='0' ) selected @endif>Female</option>
+                                <option value="1" @if(old('gender')=='1' ) selected @endif>Male</option>
                             </select>
                             @error('gender')
                             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -86,14 +86,14 @@
                         </div>
 
                         <div>
-                            <label for="stroke_subtype" class="block text-sm font-medium text-gray-700 mb-2">Stroke Type *</label>
-                            <select id="stroke_subtype" name="stroke_subtype" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('stroke_subtype') border-red-500 @enderror">
+                            <label for="stroke_subtype" class="block text-sm font-medium text-gray-700 mb-2">Stroke Type</label>
+                            <select id="stroke_subtype" name="stroke_subtype" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('stroke_subtype') border-red-500 @enderror">
                                 <option value="">Select stroke type</option>
-                                <option value="TACS" @if(old('stroke_subtype') == 'TACS') selected @endif>TACS (Total Anterior)</option>
-                                <option value="PACS" @if(old('stroke_subtype') == 'PACS') selected @endif>PACS (Partial Anterior)</option>
-                                <option value="LACS" @if(old('stroke_subtype') == 'LACS') selected @endif>LACS (Lacunar)</option>
-                                <option value="POCS" @if(old('stroke_subtype') == 'POCS') selected @endif>POCS (Posterior)</option>
-                                <option value="OTH" @if(old('stroke_subtype') == 'OTH') selected @endif>OTH (Other)</option>
+                                <option value="TACS" @if(old('stroke_subtype')=='TACS' ) selected @endif>TACS (Total Anterior)</option>
+                                <option value="PACS" @if(old('stroke_subtype')=='PACS' ) selected @endif>PACS (Partial Anterior)</option>
+                                <option value="LACS" @if(old('stroke_subtype')=='LACS' ) selected @endif>LACS (Lacunar)</option>
+                                <option value="POCS" @if(old('stroke_subtype')=='POCS' ) selected @endif>POCS (Posterior)</option>
+                                <option value="OTH" @if(old('stroke_subtype')=='OTH' ) selected @endif>OTH (Other)</option>
                             </select>
                             @error('stroke_subtype')
                             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
@@ -102,12 +102,12 @@
                     </div>
 
                     <div>
-                        <label for="conscious_state" class="block text-sm font-medium text-gray-700 mb-2">Consciousness State *</label>
-                        <select id="conscious_state" name="conscious_state" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('conscious_state') border-red-500 @enderror">
+                        <label for="conscious_state" class="block text-sm font-medium text-gray-700 mb-2">Consciousness State</label>
+                        <select id="conscious_state" name="conscious_state" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('conscious_state') border-red-500 @enderror">
                             <option value="">Select consciousness state</option>
-                            <option value="Alert" @if(old('conscious_state') == 'Alert') selected @endif>Alert</option>
-                            <option value="Drowsy" @if(old('conscious_state') == 'Drowsy') selected @endif>Drowsy</option>
-                            <option value="Unconscious" @if(old('conscious_state') == 'Unconscious') selected @endif>Unconscious</option>
+                            <option value="Alert" @if(old('conscious_state')=='Alert' ) selected @endif>Alert</option>
+                            <option value="Drowsy" @if(old('conscious_state')=='Drowsy' ) selected @endif>Drowsy</option>
+                            <option value="Unconscious" @if(old('conscious_state')=='Unconscious' ) selected @endif>Unconscious</option>
                         </select>
                         @error('conscious_state')
                         <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
