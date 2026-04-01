@@ -11,6 +11,9 @@ class Clinician extends Model
         'specialization',
         'license_number',
         'bio',
+        'hospital_affiliation',
+        'phone',
+        'is_verified',
     ];
 
     public function user()

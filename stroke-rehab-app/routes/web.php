@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Clinician\DashboardController as ClinicianDashboardController;
 use App\Http\Controllers\Clinician\PlanGeneratorController;
 use App\Http\Controllers\Clinician\PatientManagementController;
@@ -9,9 +10,16 @@ use Illuminate\Support\Facades\Auth;
 
 Route::redirect('/', '/dashboard');
 
+// Authentication Routes
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login')->middleware('guest');
+
+Route::get('/signup', [AuthController::class, 'showSignupRole'])->name('signup.role')->middleware('guest');
+Route::get('/signup/patient', [AuthController::class, 'showPatientSignup'])->name('signup.patient')->middleware('guest');
+Route::post('/signup/patient', [AuthController::class, 'registerPatient'])->name('register.patient')->middleware('guest');
+Route::get('/signup/clinician', [AuthController::class, 'showClinicianSignup'])->name('signup.clinician')->middleware('guest');
+Route::post('/signup/clinician', [AuthController::class, 'registerClinician'])->name('register.clinician')->middleware('guest');
 
 Route::post('/login', function () {
     $credentials = request()->validate([
