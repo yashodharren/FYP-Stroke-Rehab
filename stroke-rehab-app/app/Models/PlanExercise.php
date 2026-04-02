@@ -19,7 +19,6 @@ class PlanExercise extends Model
     ];
 
     protected $casts = [
-        'scheduled_time' => 'time',
         'is_completed' => 'boolean',
     ];
 

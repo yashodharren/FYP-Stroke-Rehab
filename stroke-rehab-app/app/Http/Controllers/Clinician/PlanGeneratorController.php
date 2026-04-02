@@ -100,8 +100,95 @@ class PlanGeneratorController extends Controller
             'status' => 'draft',
         ]);
 
+        // Automatically generate exercises based on ML recommendations
+        $this->generateExercisesForPlan($plan, $patient);
+
         return redirect()->route('clinician.plans.edit', $plan->id)
-            ->with('success', 'Rehabilitation plan created. Now add exercises.');
+            ->with('success', 'Rehabilitation plan created with recommended exercises.');
+    }
+
+    /**
+     * Generate exercises for a plan based on ML recommendations and patient deficits
+     */
+    private function generateExercisesForPlan(RehabPlan $plan, Patient $patient)
+    {
+        try {
+            $mlService = new MLPredictionService();
+
+            // Prepare clinical data for ML service
+            // Gender: M=1, F=0
+            $genderValue = ($patient->gender === 'F') ? 0 : 1;
+
+            $clinicalData = [
+                'age' => (int) ($patient->age ?? 0),
+                'gender' => $genderValue,
+                'rsbp' => (int) ($patient->rsbp ?? 0),
+                'stroke_subtype' => $patient->stroke_subtype ?? 'OTH',
+                'conscious_state' => $patient->conscious_state ?? 'Alert',
+                'rdef1' => (bool) $patient->rdef1,
+                'rdef2' => (bool) $patient->rdef2,
+                'rdef3' => (bool) $patient->rdef3,
+                'rdef4' => (bool) $patient->rdef4,
+                'rdef5' => (bool) $patient->rdef5,
+                'rdef6' => (bool) $patient->rdef6,
+                'rdef7' => (bool) $patient->rdef7,
+                'rdef8' => (bool) $patient->rdef8,
+            ];
+
+            // Get ML recommendations
+            $mlPrediction = $mlService->predictRecoveryWithISTData($clinicalData);
+
+            \Log::info('ML Prediction Response:', $mlPrediction);
+
+            if (isset($mlPrediction['recommended_exercises']) && !empty($mlPrediction['recommended_exercises'])) {
+                $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                $dayIndex = 0;
+
+                // Add recommended exercises to the plan
+                foreach ($mlPrediction['recommended_exercises'] as $recommendation) {
+                    \Log::info('Processing exercise recommendation:', $recommendation);
+
+                    // Find exercise by name or create a reference
+                    $exercise = Exercise::where('name', $recommendation['name'])
+                        ->orWhere('name', 'like', '%' . $recommendation['name'] . '%')
+                        ->first();
+
+                    if ($exercise) {
+                        $day = $days[$dayIndex % 7];
+                        $dayIndex++;
+
+                        // Extract numeric reps from progression_reps string (e.g., "3 sets of 10 reps" -> 10)
+                        $customReps = null;
+                        if (isset($recommendation['progression_reps'])) {
+                            preg_match('/\d+(?=\s*reps)/', $recommendation['progression_reps'], $matches);
+                            if (!empty($matches)) {
+                                $customReps = (int) $matches[0];
+                            }
+                        }
+
+                        PlanExercise::create([
+                            'rehab_plan_id' => $plan->id,
+                            'exercise_id' => $exercise->id,
+                            'day_of_week' => $day,
+                            'frequency_per_week' => 3,
+                            'scheduled_time' => '09:00',
+                            'custom_repetitions' => $customReps,
+                            'custom_duration_minutes' => 30,
+                            'notes' => $recommendation['safety_notes'] ?? null,
+                        ]);
+
+                        \Log::info("Added exercise: {$exercise->name} to plan {$plan->id}");
+                    } else {
+                        \Log::warning("Exercise not found in database: {$recommendation['name']}");
+                    }
+                }
+            } else {
+                \Log::warning('No recommended exercises in ML response');
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to generate exercises automatically: ' . $e->getMessage());
+            // Continue without auto-generation - user can add manually
+        }
     }
 
     public function edit($planId)
@@ -152,6 +239,76 @@ class PlanGeneratorController extends Controller
         ]);
 
         return back()->with('success', 'Exercise added to plan.');
+    }
+
+    public function updateExercise(Request $request, $planId, $planExerciseId)
+    {
+        \Log::info('=== UPDATE EXERCISE METHOD CALLED ===');
+        \Log::info('planId: ' . $planId . ', planExerciseId: ' . $planExerciseId);
+
+        $clinician = auth()->user();
+        $plan = RehabPlan::findOrFail($planId);
+
+        if ($plan->clinician_id !== $clinician->id) {
+            abort(403, 'Unauthorized access to this plan.');
+        }
+
+        $planExercise = PlanExercise::findOrFail($planExerciseId);
+
+        \Log::info('Update Exercise Request:', [
+            'planExerciseId' => $planExerciseId,
+            'request_method' => $request->method(),
+            'request_data' => $request->all(),
+        ]);
+
+        $validated = $request->validate([
+            'exercise_id' => 'required|exists:exercises,id',
+            'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'frequency_per_week' => 'required|integer|min:1|max:7',
+            'scheduled_time' => 'nullable|date_format:H:i:s',
+            'custom_repetitions' => 'nullable|integer|min:1',
+            'custom_duration_minutes' => 'nullable|integer|min:1',
+        ]);
+
+        \Log::info('Validated data:', $validated);
+
+        $planExercise->update($validated);
+
+        \Log::info('Exercise updated:', $planExercise->fresh()->toArray());
+
+        return back()->with('success', 'Exercise updated successfully.');
+    }
+
+    public function removeExercise($planExerciseId)
+    {
+        $clinician = auth()->user();
+        $planExercise = PlanExercise::findOrFail($planExerciseId);
+        $plan = $planExercise->rehabPlan;
+
+        if ($plan->clinician_id !== $clinician->id) {
+            abort(403, 'Unauthorized access to this plan.');
+        }
+
+        $planExercise->delete();
+
+        return back()->with('success', 'Exercise removed from plan.');
+    }
+
+    public function deletePlan($planId)
+    {
+        $clinician = auth()->user();
+        $plan = RehabPlan::findOrFail($planId);
+
+        if ($plan->clinician_id !== $clinician->id) {
+            abort(403, 'Unauthorized access to this plan.');
+        }
+
+        $planName = $plan->plan_name;
+
+        $plan->delete();
+
+        return redirect()->route('clinician.plans.index')
+            ->with('success', 'Rehabilitation plan "' . $planName . '" has been deleted successfully.');
     }
 
     public function publish($planId)

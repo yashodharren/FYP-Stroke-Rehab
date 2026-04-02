@@ -33,7 +33,7 @@ class PatientManagementController extends Controller
                 ->get();
         }
 
-        return view('clinician.patients.management', [
+        return view('clinician.patients.index', [
             'patients' => $patients,
             'unassignedPatients' => $unassignedPatients,
             'search' => $search,
@@ -56,11 +56,11 @@ class PatientManagementController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
-            'age' => 'required|integer|min:0|max:150',
-            'gender' => 'required|in:0,1',
+            'age' => 'nullable|integer|min:0|max:150',
+            'gender' => 'nullable|in:0,1',
             'rsbp' => 'nullable|integer|min:0|max:300',
-            'stroke_subtype' => 'required|in:TACS,PACS,LACS,POCS,OTH',
-            'conscious_state' => 'required|in:Alert,Drowsy,Unconscious',
+            'stroke_subtype' => 'nullable|in:TACS,PACS,LACS,POCS,OTH',
+            'conscious_state' => 'nullable|in:Alert,Drowsy,Unconscious',
         ]);
 
         // Generate temporary password
@@ -75,7 +75,7 @@ class PatientManagementController extends Controller
         ]);
 
         // Create patient record
-        $patient = Patient::create([
+        $patientData = [
             'user_id' => $user->id,
             'clinician_id' => auth()->id(),
             'age' => $validated['age'],
@@ -84,7 +84,9 @@ class PatientManagementController extends Controller
             'stroke_subtype' => $validated['stroke_subtype'],
             'conscious_state' => $validated['conscious_state'],
             'recovery_status' => 'new',
-        ]);
+        ];
+
+        $patient = Patient::create($patientData);
 
         return redirect()->route('clinician.patients.index')
             ->with('success', "Patient '{$user->name}' created successfully. Temporary password: {$tempPassword}");

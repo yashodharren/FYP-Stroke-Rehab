@@ -61,48 +61,57 @@
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-900">Your Patients</h2>
-            <a href="{{ route('clinician.patients.index') }}" class="text-blue-600 hover:text-blue-800 font-medium">View All</a>
+            <h2 class="text-xl font-bold text-gray-900">Appointment Reminders</h2>
+            <a href="{{ route('clinician.appointments.index') }}" class="text-blue-600 hover:text-blue-800 font-medium">View All</a>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Patient Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Age</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Stroke Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($patients as $patient)
-                    <tr class="border-b border-gray-200 hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-900">{{ $patient->user->name }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ $patient->age }}</td>
-                        <td class="px-6 py-4 text-sm text-gray-600">{{ ucfirst($patient->stroke_type) }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            <span class="px-3 py-1 rounded-full text-xs font-medium
-                                        @if($patient->recovery_status === 'new') bg-blue-100 text-blue-800
-                                        @elseif($patient->recovery_status === 'in_progress') bg-yellow-100 text-yellow-800
-                                        @elseif($patient->recovery_status === 'completed') bg-green-100 text-green-800
-                                        @else bg-gray-100 text-gray-800
-                                        @endif">
-                                {{ ucfirst(str_replace('_', ' ', $patient->recovery_status)) }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm space-x-2">
-                            <a href="{{ route('clinician.patients.show', $patient->id) }}" class="text-blue-600 hover:text-blue-800 font-medium">View</a>
-                            <a href="{{ route('clinician.plans.create', $patient->id) }}" class="text-green-600 hover:text-green-800 font-medium">Create Plan</a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-gray-600">No patients assigned yet.</td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="flex items-start gap-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div class="flex-shrink-0 mt-1">
+                        <svg class="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-red-900">John Doe - Follow-up Session</h3>
+                        <p class="text-sm text-red-700 mt-1">Today at 2:00 PM</p>
+                        <p class="text-xs text-red-600 mt-2">Patient: Post-stroke rehabilitation progress check</p>
+                    </div>
+                    <button class="text-red-600 hover:text-red-800 font-medium text-sm">Reschedule</button>
+                </div>
+
+                <div class="flex items-start gap-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex-shrink-0 mt-1">
+                        <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-yellow-900">Jane Smith - Assessment Review</h3>
+                        <p class="text-sm text-yellow-700 mt-1">Tomorrow at 10:00 AM</p>
+                        <p class="text-xs text-yellow-600 mt-2">Patient: Functional assessment and plan adjustment</p>
+                    </div>
+                    <button class="text-yellow-600 hover:text-yellow-800 font-medium text-sm">Reschedule</button>
+                </div>
+
+                <div class="flex items-start gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex-shrink-0 mt-1">
+                        <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-blue-900">Michael Johnson - Exercise Session</h3>
+                        <p class="text-sm text-blue-700 mt-1">April 5, 2026 at 3:00 PM</p>
+                        <p class="text-xs text-blue-600 mt-2">Patient: Supervised rehabilitation exercise program</p>
+                    </div>
+                    <button class="text-blue-600 hover:text-blue-800 font-medium text-sm">Reschedule</button>
+                </div>
+
+                <div class="text-center py-4 text-gray-600 text-sm">
+                    <p>No more appointments scheduled for this week</p>
+                </div>
+            </div>
         </div>
     </div>
     @endsection

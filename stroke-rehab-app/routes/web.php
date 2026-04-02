@@ -93,6 +93,9 @@ Route::middleware('auth')->group(function () {
             Route::post('/store/{patient}', [PlanGeneratorController::class, 'store'])->name('store');
             Route::get('/{plan}/edit', [PlanGeneratorController::class, 'edit'])->name('edit');
             Route::post('/{plan}/add-exercise', [PlanGeneratorController::class, 'addExercise'])->name('add-exercise');
+            Route::put('/{plan}/exercises/{planExercise}/update', [PlanGeneratorController::class, 'updateExercise'])->name('update-exercise');
+            Route::delete('/{planExercise}/remove', [PlanGeneratorController::class, 'removeExercise'])->name('remove-exercise');
+            Route::delete('/{plan}/delete', [PlanGeneratorController::class, 'deletePlan'])->name('delete');
             Route::post('/{plan}/publish', [PlanGeneratorController::class, 'publish'])->name('publish');
         });
 
