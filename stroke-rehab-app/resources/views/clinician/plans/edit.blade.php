@@ -39,22 +39,12 @@
                                         data-first-plan-exercise-id="{{ $grouped['plan_exercises'][0]['id'] }}"
                                         data-days="{{ json_encode($grouped['days']) }}"
                                         data-frequency="{{ $grouped['frequency_per_week'] }}"
-                                        data-scheduled-time="{{ $grouped['scheduled_time'] }}"
+                                        data-scheduled-times="{{ json_encode(array_combine($grouped['days'], array_map(function($pe) { return $pe['scheduled_time']; }, $grouped['plan_exercises']))) }}"
                                         data-custom-reps="{{ $grouped['custom_repetitions'] }}"
                                         data-custom-duration="{{ $grouped['custom_duration_minutes'] }}">Edit</button>
-                                    <div class="relative group">
-                                        <button type="button" class="text-red-600 hover:text-red-800 font-medium text-sm">Remove</button>
-                                        <div class="hidden group-hover:block absolute right-0 bg-white border border-gray-300 rounded shadow-lg p-2 z-10 whitespace-nowrap">
-                                            <p class="text-xs text-gray-600 mb-2">Remove all instances?</p>
-                                            @foreach($grouped['plan_exercises'] as $pe)
-                                            <form method="POST" action="{{ route('clinician.plans.remove-exercise', $pe['id']) }}" style="display:inline;">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-800 text-xs block w-full text-left px-2 py-1">{{ $pe['day_of_week'] }}</button>
-                                            </form>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                    <button type="button" class="remove-btn text-red-600 hover:text-red-800 font-medium text-sm"
+                                        data-exercise-name="{{ $grouped['exercise']->name }}"
+                                        data-plan-exercise-id="{{ $grouped['plan_exercises'][0]['id'] }}">Remove</button>
                                 </div>
                             </div>
                         </div>
@@ -191,11 +181,59 @@
                 const exerciseId = this.dataset.exerciseId;
                 const daysJson = this.dataset.days;
                 const frequency = this.dataset.frequency;
-                const scheduledTime = this.dataset.scheduledTime;
+                const scheduledTimesJson = this.dataset.scheduledTimes;
                 const customReps = this.dataset.customReps;
                 const customDuration = this.dataset.customDuration;
 
-                editExercise(exerciseId, daysJson, frequency, scheduledTime, customReps, customDuration);
+                editExercise(exerciseId, daysJson, frequency, scheduledTimesJson, customReps, customDuration);
+            });
+        });
+
+        // Initialize remove button event listeners
+        const removeButtons = document.querySelectorAll('.remove-btn');
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const exerciseName = this.dataset.exerciseName;
+                const planExerciseId = this.dataset.planExerciseId;
+
+                Swal.fire({
+                    title: 'Remove Exercise?',
+                    text: `Are you sure you want to remove "${exerciseName}" from the plan?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280',
+                    confirmButtonText: 'Yes, remove it',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Get CSRF token from existing form
+                        const existingForm = document.getElementById('exerciseForm');
+                        const csrfToken = existingForm.querySelector('input[name="_token"]').value;
+
+                        // Create and submit a hidden form
+                        const form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = `/clinician/plans/${planExerciseId}/remove`;
+
+                        // Add CSRF token
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
+
+                        // Add method spoofing for DELETE
+                        const methodInput = document.createElement('input');
+                        methodInput.type = 'hidden';
+                        methodInput.name = '_method';
+                        methodInput.value = 'DELETE';
+                        form.appendChild(methodInput);
+
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                });
             });
         });
     });
@@ -294,7 +332,7 @@
         return true;
     }
 
-    function editExercise(exerciseId, daysJson, frequency, scheduledTime, customReps, customDuration) {
+    function editExercise(exerciseId, daysJson, frequency, scheduledTimesJson, customReps, customDuration) {
         // Parse the days array from JSON
         let days = [];
         try {
@@ -304,10 +342,18 @@
             days = [];
         }
 
+        // Parse the scheduled times object from JSON
+        let scheduledTimes = {};
+        try {
+            scheduledTimes = JSON.parse(scheduledTimesJson);
+        } catch (e) {
+            console.error('Error parsing scheduled times:', e);
+            scheduledTimes = {};
+        }
+
         // Populate the form with existing values
         document.getElementById('exercise_id').value = exerciseId;
         document.getElementById('frequency_per_week').value = frequency;
-        document.getElementById('scheduled_time').value = scheduledTime || '';
         document.getElementById('custom_repetitions').value = customReps || '';
         document.getElementById('custom_duration_minutes').value = customDuration || '';
 
@@ -323,6 +369,21 @@
 
         // Update time inputs based on selected days
         updateTimeInputs();
+
+        // Populate the time inputs with existing scheduled times
+        setTimeout(() => {
+            days.forEach(day => {
+                const timeInput = document.querySelector(`input[name="scheduled_times[${day}]"]`);
+                if (timeInput && scheduledTimes[day]) {
+                    // Extract HH:mm from HH:mm:ss format if needed
+                    let timeValue = scheduledTimes[day];
+                    if (timeValue.length > 5) {
+                        timeValue = timeValue.substring(0, 5);
+                    }
+                    timeInput.value = timeValue;
+                }
+            });
+        }, 0);
 
         // Set edit mode flag
         isEditMode = true;
@@ -385,6 +446,8 @@
         document.getElementById('formTitle').textContent = 'Add Exercises to Plan';
     }
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </div>
 </div>
 @endsection

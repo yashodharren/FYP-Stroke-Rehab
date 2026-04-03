@@ -106,7 +106,9 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('patient')->name('patient.')->middleware('patient')->group(function () {
         Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/details', [PatientDashboardController::class, 'details'])->name('details');
         Route::get('/schedule', [PatientDashboardController::class, 'schedule'])->name('schedule');
+        Route::get('/appointments', [PatientDashboardController::class, 'appointments'])->name('appointments');
         Route::post('/feedback/{planExercise}', [PatientDashboardController::class, 'submitFeedback'])->name('feedback');
     });
 });
