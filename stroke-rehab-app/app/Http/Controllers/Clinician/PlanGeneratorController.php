@@ -203,10 +203,25 @@ class PlanGeneratorController extends Controller
         $exercises = Exercise::where('difficulty_level', '<=', $plan->difficulty_level)->get();
         $planExercises = $plan->exercises()->with('exercise')->get();
 
+        // Group exercises by exercise_id to consolidate multiple days into one entry
+        $groupedExercises = $planExercises->groupBy('exercise_id')->map(function ($group) {
+            return [
+                'exercise_id' => $group->first()->exercise_id,
+                'exercise' => $group->first()->exercise,
+                'frequency_per_week' => $group->first()->frequency_per_week,
+                'scheduled_time' => $group->first()->scheduled_time,
+                'custom_repetitions' => $group->first()->custom_repetitions,
+                'custom_duration_minutes' => $group->first()->custom_duration_minutes,
+                'days' => $group->pluck('day_of_week')->toArray(),
+                'plan_exercises' => $group->toArray(),
+            ];
+        });
+
         return view('clinician.plans.edit', [
             'plan' => $plan,
             'exercises' => $exercises,
             'planExercises' => $planExercises,
+            'groupedExercises' => $groupedExercises,
         ]);
     }
 
@@ -221,24 +236,28 @@ class PlanGeneratorController extends Controller
 
         $validated = $request->validate([
             'exercise_id' => 'required|exists:exercises,id',
-            'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'days_of_week' => 'required|array|min:1',
+            'days_of_week.*' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'frequency_per_week' => 'required|integer|min:1|max:7',
             'scheduled_time' => 'nullable|date_format:H:i',
             'custom_repetitions' => 'nullable|integer|min:1',
             'custom_duration_minutes' => 'nullable|integer|min:1',
         ]);
 
-        PlanExercise::create([
-            'rehab_plan_id' => $plan->id,
-            'exercise_id' => $validated['exercise_id'],
-            'day_of_week' => $validated['day_of_week'],
-            'frequency_per_week' => $validated['frequency_per_week'],
-            'scheduled_time' => $validated['scheduled_time'],
-            'custom_repetitions' => $validated['custom_repetitions'],
-            'custom_duration_minutes' => $validated['custom_duration_minutes'],
-        ]);
+        // Create a PlanExercise record for each selected day
+        foreach ($validated['days_of_week'] as $day) {
+            PlanExercise::create([
+                'rehab_plan_id' => $plan->id,
+                'exercise_id' => $validated['exercise_id'],
+                'day_of_week' => $day,
+                'frequency_per_week' => $validated['frequency_per_week'],
+                'scheduled_time' => $validated['scheduled_time'],
+                'custom_repetitions' => $validated['custom_repetitions'],
+                'custom_duration_minutes' => $validated['custom_duration_minutes'],
+            ]);
+        }
 
-        return back()->with('success', 'Exercise added to plan.');
+        return back()->with('success', 'Exercise added to plan for ' . count($validated['days_of_week']) . ' day(s).');
     }
 
     public function updateExercise(Request $request, $planId, $planExerciseId)
@@ -254,6 +273,7 @@ class PlanGeneratorController extends Controller
         }
 
         $planExercise = PlanExercise::findOrFail($planExerciseId);
+        $exerciseId = $planExercise->exercise_id;
 
         \Log::info('Update Exercise Request:', [
             'planExerciseId' => $planExerciseId,
@@ -263,7 +283,8 @@ class PlanGeneratorController extends Controller
 
         $validated = $request->validate([
             'exercise_id' => 'required|exists:exercises,id',
-            'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'days_of_week' => 'required|array|min:1',
+            'days_of_week.*' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'frequency_per_week' => 'required|integer|min:1|max:7',
             'scheduled_time' => 'nullable|date_format:H:i:s',
             'custom_repetitions' => 'nullable|integer|min:1',
@@ -272,11 +293,27 @@ class PlanGeneratorController extends Controller
 
         \Log::info('Validated data:', $validated);
 
-        $planExercise->update($validated);
+        // Delete all existing PlanExercise records for this exercise in this plan
+        PlanExercise::where('rehab_plan_id', $plan->id)
+            ->where('exercise_id', $exerciseId)
+            ->delete();
 
-        \Log::info('Exercise updated:', $planExercise->fresh()->toArray());
+        // Create new records for all selected days
+        foreach ($validated['days_of_week'] as $day) {
+            PlanExercise::create([
+                'rehab_plan_id' => $plan->id,
+                'exercise_id' => $validated['exercise_id'],
+                'day_of_week' => $day,
+                'frequency_per_week' => $validated['frequency_per_week'],
+                'scheduled_time' => $validated['scheduled_time'],
+                'custom_repetitions' => $validated['custom_repetitions'],
+                'custom_duration_minutes' => $validated['custom_duration_minutes'],
+            ]);
+        }
 
-        return back()->with('success', 'Exercise updated successfully.');
+        \Log::info('Exercise updated for all days');
+
+        return back()->with('success', 'Exercise updated successfully for ' . count($validated['days_of_week']) . ' day(s).');
     }
 
     public function removeExercise($planExerciseId)

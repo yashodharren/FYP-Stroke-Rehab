@@ -18,6 +18,53 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Exercises in Plan</h2>
+                    <div class="divide-y divide-gray-200">
+                        @forelse($groupedExercises as $grouped)
+                        <div class="py-4 first:pt-0 last:pb-0">
+                            <div class="flex justify-between items-start gap-4">
+                                <div class="flex-1">
+                                    <h3 class="font-semibold text-gray-900">{{ $grouped['exercise']->name }}</h3>
+                                    <p class="text-gray-600 text-sm mt-1">{{ $grouped['exercise']->description }}</p>
+                                    <div class="mt-2 flex gap-4 text-sm text-gray-600 flex-wrap">
+                                        <span>📅 {{ implode(', ', $grouped['days']) }}</span>
+                                        <span>🔄 {{ $grouped['frequency_per_week'] }}x/week</span>
+                                        <span>⏱️ {{ $grouped['custom_duration_minutes'] ?? $grouped['exercise']->duration_minutes }} min</span>
+                                        <span>💪 {{ $grouped['custom_repetitions'] ?? $grouped['exercise']->repetitions }} reps</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button type="button" class="edit-btn text-blue-600 hover:text-blue-800 font-medium text-sm"
+                                        data-exercise-id="{{ $grouped['exercise_id'] }}"
+                                        data-first-plan-exercise-id="{{ $grouped['plan_exercises'][0]['id'] }}"
+                                        data-days="{{ json_encode($grouped['days']) }}"
+                                        data-frequency="{{ $grouped['frequency_per_week'] }}"
+                                        data-scheduled-time="{{ $grouped['scheduled_time'] }}"
+                                        data-custom-reps="{{ $grouped['custom_repetitions'] }}"
+                                        data-custom-duration="{{ $grouped['custom_duration_minutes'] }}">Edit</button>
+                                    <div class="relative group">
+                                        <button type="button" class="text-red-600 hover:text-red-800 font-medium text-sm">Remove</button>
+                                        <div class="hidden group-hover:block absolute right-0 bg-white border border-gray-300 rounded shadow-lg p-2 z-10 whitespace-nowrap">
+                                            <p class="text-xs text-gray-600 mb-2">Remove all instances?</p>
+                                            @foreach($grouped['plan_exercises'] as $pe)
+                                            <form method="POST" action="{{ route('clinician.plans.remove-exercise', $pe['id']) }}" style="display:inline;">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:text-red-800 text-xs block w-full text-left px-2 py-1">{{ $pe['day_of_week'] }}</button>
+                                            </form>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @empty
+                        <p class="text-gray-600 py-4">No exercises added yet. Add exercises using the form below.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4" id="formTitle">Add Exercises to Plan</h2>
                     <form id="exerciseForm" method="POST" action="{{ route('clinician.plans.add-exercise', $plan->id) }}" class="space-y-4" onsubmit="return setFormMethod()">
                         @csrf
@@ -33,25 +80,45 @@
                             </select>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="day_of_week" class="block text-sm font-medium text-gray-700 mb-2">Day of Week *</label>
-                                <select id="day_of_week" name="day_of_week" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    <option value="">Select day</option>
-                                    <option value="Monday">Monday</option>
-                                    <option value="Tuesday">Tuesday</option>
-                                    <option value="Wednesday">Wednesday</option>
-                                    <option value="Thursday">Thursday</option>
-                                    <option value="Friday">Friday</option>
-                                    <option value="Saturday">Saturday</option>
-                                    <option value="Sunday">Sunday</option>
-                                </select>
-                            </div>
+                        <div>
+                            <label for="frequency_per_week" class="block text-sm font-medium text-gray-700 mb-2">Frequency per Week *</label>
+                            <input type="number" id="frequency_per_week" name="frequency_per_week" min="1" max="7" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="1" onchange="updateDaySelection()">
+                        </div>
 
-                            <div>
-                                <label for="frequency_per_week" class="block text-sm font-medium text-gray-700 mb-2">Frequency per Week *</label>
-                                <input type="number" id="frequency_per_week" name="frequency_per_week" min="1" max="7" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value="1">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Days of Week *</label>
+                            <p class="text-xs text-gray-600 mb-3">Select the days this exercise should be performed</p>
+                            <div id="daysContainer" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Monday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Monday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Tuesday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Tuesday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Wednesday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Wednesday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Thursday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Thursday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Friday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Friday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Saturday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Saturday</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="days_of_week[]" value="Sunday" class="day-checkbox rounded">
+                                    <span class="ml-2 text-sm text-gray-700">Sunday</span>
+                                </label>
                             </div>
+                            <div id="daysError" class="text-red-600 text-sm mt-2" style="display:none;"></div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-4">
@@ -107,45 +174,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-6 mt-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">Exercises in Plan</h2>
-            <div class="divide-y divide-gray-200">
-                @forelse($planExercises as $planExercise)
-                <div class="py-4 first:pt-0 last:pb-0">
-                    <div class="flex justify-between items-start gap-4">
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-gray-900">{{ $planExercise->exercise->name }}</h3>
-                            <p class="text-gray-600 text-sm mt-1">{{ $planExercise->exercise->description }}</p>
-                            <div class="mt-2 flex gap-4 text-sm text-gray-600">
-                                <span>📅 {{ $planExercise->day_of_week }}</span>
-                                <span>🔄 {{ $planExercise->frequency_per_week }}x/week</span>
-                                <span>⏱️ {{ $planExercise->custom_duration_minutes ?? $planExercise->exercise->duration_minutes }} min</span>
-                                <span>💪 {{ $planExercise->custom_repetitions ?? $planExercise->exercise->repetitions }} reps</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button type="button" class="edit-btn text-blue-600 hover:text-blue-800 font-medium text-sm"
-                                data-plan-exercise-id="{{ $planExercise->id }}"
-                                data-exercise-id="{{ $planExercise->exercise->id }}"
-                                data-day-of-week="{{ $planExercise->day_of_week }}"
-                                data-frequency="{{ $planExercise->frequency_per_week }}"
-                                data-scheduled-time="{{ $planExercise->scheduled_time }}"
-                                data-custom-reps="{{ $planExercise->custom_repetitions }}"
-                                data-custom-duration="{{ $planExercise->custom_duration_minutes }}">Edit</button>
-                            <form method="POST" action="{{ route('clinician.plans.remove-exercise', $planExercise->id) }}" style="display:inline;" onsubmit="return confirm('Remove this exercise from the plan?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-red-600 hover:text-red-800 font-medium text-sm">Remove</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <p class="text-gray-600 py-4">No exercises added yet. Add exercises using the form above.</p>
-                @endforelse
-            </div>
-        </div>
     </div>
 </div>
 
@@ -157,20 +185,73 @@
         const editButtons = document.querySelectorAll('.edit-btn');
         editButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const planExerciseId = this.dataset.planExerciseId;
                 const exerciseId = this.dataset.exerciseId;
-                const dayOfWeek = this.dataset.dayOfWeek;
+                const daysJson = this.dataset.days;
                 const frequency = this.dataset.frequency;
                 const scheduledTime = this.dataset.scheduledTime;
                 const customReps = this.dataset.customReps;
                 const customDuration = this.dataset.customDuration;
 
-                editExercise(planExerciseId, exerciseId, dayOfWeek, frequency, scheduledTime, customReps, customDuration);
+                editExercise(exerciseId, daysJson, frequency, scheduledTime, customReps, customDuration);
             });
         });
     });
 
+    function updateDaySelection() {
+        const frequency = parseInt(document.getElementById('frequency_per_week').value) || 1;
+        const checkboxes = document.querySelectorAll('.day-checkbox');
+
+        // Uncheck all first
+        checkboxes.forEach(cb => cb.checked = false);
+
+        // Auto-select suggested days based on frequency
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const suggestedDays = [];
+
+        if (frequency === 1) {
+            suggestedDays.push('Monday');
+        } else if (frequency === 2) {
+            suggestedDays.push('Monday', 'Thursday');
+        } else if (frequency === 3) {
+            suggestedDays.push('Monday', 'Wednesday', 'Friday');
+        } else if (frequency === 4) {
+            suggestedDays.push('Monday', 'Tuesday', 'Thursday', 'Friday');
+        } else if (frequency === 5) {
+            suggestedDays.push('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday');
+        } else if (frequency === 6) {
+            suggestedDays.push('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday');
+        } else if (frequency === 7) {
+            suggestedDays = days;
+        }
+
+        // Check the suggested days
+        checkboxes.forEach(cb => {
+            if (suggestedDays.includes(cb.value)) {
+                cb.checked = true;
+            }
+        });
+    }
+
     function setFormMethod() {
+        // Validate that at least one day is selected
+        const selectedDays = document.querySelectorAll('.day-checkbox:checked');
+        const frequency = parseInt(document.getElementById('frequency_per_week').value) || 1;
+        const daysError = document.getElementById('daysError');
+
+        if (selectedDays.length === 0) {
+            daysError.textContent = 'Please select at least one day of the week';
+            daysError.style.display = 'block';
+            return false;
+        }
+
+        if (selectedDays.length !== frequency) {
+            daysError.textContent = `Please select exactly ${frequency} day(s) matching the frequency`;
+            daysError.style.display = 'block';
+            return false;
+        }
+
+        daysError.style.display = 'none';
+
         // This function is called on form submission to ensure _method is set correctly
         const methodInput = document.getElementById('form_method');
         if (isEditMode) {
@@ -183,14 +264,32 @@
         return true;
     }
 
-    function editExercise(planExerciseId, exerciseId, dayOfWeek, frequency, scheduledTime, customReps, customDuration) {
+    function editExercise(exerciseId, daysJson, frequency, scheduledTime, customReps, customDuration) {
+        // Parse the days array from JSON
+        let days = [];
+        try {
+            days = JSON.parse(daysJson);
+        } catch (e) {
+            console.error('Error parsing days:', e);
+            days = [];
+        }
+
         // Populate the form with existing values
         document.getElementById('exercise_id').value = exerciseId;
-        document.getElementById('day_of_week').value = dayOfWeek;
         document.getElementById('frequency_per_week').value = frequency;
         document.getElementById('scheduled_time').value = scheduledTime || '';
         document.getElementById('custom_repetitions').value = customReps || '';
         document.getElementById('custom_duration_minutes').value = customDuration || '';
+
+        // Set the day checkboxes for all selected days
+        const checkboxes = document.querySelectorAll('.day-checkbox');
+        checkboxes.forEach(cb => cb.checked = false);
+        days.forEach(day => {
+            const dayCheckbox = document.querySelector(`.day-checkbox[value="${day}"]`);
+            if (dayCheckbox) {
+                dayCheckbox.checked = true;
+            }
+        });
 
         // Set edit mode flag
         isEditMode = true;
@@ -201,14 +300,24 @@
         const planId = pathParts[2];
 
         console.log('Edit Exercise Debug Info:');
-        console.log('  planExerciseId:', planExerciseId);
         console.log('  exerciseId:', exerciseId);
+        console.log('  days:', days);
+        console.log('  frequency:', frequency);
         console.log('  pathParts:', pathParts);
         console.log('  planId:', planId);
 
-        // Change form action to update endpoint
+        // For edit mode, we need to use the first exercise ID to update
+        // Store the exercise IDs for later use
+        window.editingExerciseIds = days.map((day, index) => {
+            // This will be populated by data attributes
+            return null;
+        });
+
+        // Change form action to update endpoint - use first day's exercise ID
         const form = document.getElementById('exerciseForm');
-        const newAction = `/clinician/plans/${planId}/exercises/${planExerciseId}/update`;
+        // We'll need to get the first plan exercise ID from the button
+        const firstExerciseId = document.querySelector(`.edit-btn[data-exercise-id="${exerciseId}"]`)?.dataset.firstPlanExerciseId;
+        const newAction = `/clinician/plans/${planId}/exercises/${firstExerciseId}/update`;
         console.log('  newAction:', newAction);
         form.action = newAction;
 
