@@ -321,6 +321,9 @@
             }
         });
 
+        // Update time inputs based on selected days
+        updateTimeInputs();
+
         // Set edit mode flag
         isEditMode = true;
 

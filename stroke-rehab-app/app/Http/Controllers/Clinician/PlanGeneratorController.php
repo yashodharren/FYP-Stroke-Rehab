@@ -205,6 +205,13 @@ class PlanGeneratorController extends Controller
                             $selectedDays = [$selectedDays];
                         }
 
+                        // Calculate time slot for this exercise (stagger by exercise index)
+                        $baseHour = 9 + $exerciseIndex; // 9:00, 10:00, 11:00, etc.
+                        if ($baseHour > 17) {
+                            $baseHour = 17; // Cap at 5 PM
+                        }
+                        $scheduledTime = sprintf('%02d:00', $baseHour);
+
                         // Create a PlanExercise record for each day
                         foreach ($selectedDays as $day) {
                             PlanExercise::create([
@@ -212,7 +219,7 @@ class PlanGeneratorController extends Controller
                                 'exercise_id' => $exercise->id,
                                 'day_of_week' => $day,
                                 'frequency_per_week' => $frequency,
-                                'scheduled_time' => '09:00',
+                                'scheduled_time' => $scheduledTime,
                                 'custom_repetitions' => $customReps,
                                 'custom_duration_minutes' => 30,
                                 'notes' => $recommendation['safety_notes'] ?? null,
