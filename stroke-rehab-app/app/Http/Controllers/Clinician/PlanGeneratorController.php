@@ -101,16 +101,22 @@ class PlanGeneratorController extends Controller
         ]);
 
         // Automatically generate exercises based on ML recommendations
-        $this->generateExercisesForPlan($plan, $patient);
+        $exercisesGenerated = $this->generateExercisesForPlan($plan, $patient);
+
+        $message = $exercisesGenerated
+            ? 'Rehabilitation plan created with recommended exercises.'
+            : 'Rehabilitation plan created. Please add exercises manually.';
 
         return redirect()->route('clinician.plans.edit', $plan->id)
-            ->with('success', 'Rehabilitation plan created with recommended exercises.');
+            ->with('success', $message);
     }
 
     /**
      * Generate exercises for a plan based on ML recommendations and patient deficits
+     * 
+     * @return bool True if exercises were successfully generated, false otherwise
      */
-    private function generateExercisesForPlan(RehabPlan $plan, Patient $patient)
+    private function generateExercisesForPlan(RehabPlan $plan, Patient $patient): bool
     {
         try {
             $mlService = new MLPredictionService();
@@ -141,21 +147,45 @@ class PlanGeneratorController extends Controller
             \Log::info('ML Prediction Response:', $mlPrediction);
 
             if (isset($mlPrediction['recommended_exercises']) && !empty($mlPrediction['recommended_exercises'])) {
-                $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                $dayIndex = 0;
+                // Define day patterns to avoid collisions between exercises
+                // Pattern 1: Monday, Wednesday, Friday (for odd-indexed exercises: 0, 2, 4...)
+                // Pattern 2: Tuesday, Thursday, Saturday (for even-indexed exercises: 1, 3, 5...)
+                $dayPatterns = [
+                    [
+                        1 => 'Monday',
+                        2 => ['Monday', 'Wednesday'],
+                        3 => ['Monday', 'Wednesday', 'Friday'],
+                    ],
+                    [
+                        1 => 'Tuesday',
+                        2 => ['Tuesday', 'Thursday'],
+                        3 => ['Tuesday', 'Thursday', 'Saturday'],
+                    ],
+                ];
+
+                $exercisesAdded = 0;
+                $exerciseIndex = 0;
 
                 // Add recommended exercises to the plan
                 foreach ($mlPrediction['recommended_exercises'] as $recommendation) {
                     \Log::info('Processing exercise recommendation:', $recommendation);
 
-                    // Find exercise by name or create a reference
-                    $exercise = Exercise::where('name', $recommendation['name'])
-                        ->orWhere('name', 'like', '%' . $recommendation['name'] . '%')
+                    // Find exercise by name (case-insensitive exact match first, then fuzzy match)
+                    $recommendedName = $recommendation['name'];
+                    $exercise = Exercise::whereRaw('LOWER(name) = ?', [strtolower($recommendedName)])
                         ->first();
 
+                    // If exact match not found, try fuzzy match
+                    if (!$exercise) {
+                        $exercise = Exercise::whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($recommendedName) . '%'])
+                            ->first();
+                    }
+
                     if ($exercise) {
-                        $day = $days[$dayIndex % 7];
-                        $dayIndex++;
+                        // Get frequency from recommendation or default to 3
+                        $frequency = isset($recommendation['frequency_per_week'])
+                            ? (int) $recommendation['frequency_per_week']
+                            : 3;
 
                         // Extract numeric reps from progression_reps string (e.g., "3 sets of 10 reps" -> 10)
                         $customReps = null;
@@ -166,28 +196,45 @@ class PlanGeneratorController extends Controller
                             }
                         }
 
-                        PlanExercise::create([
-                            'rehab_plan_id' => $plan->id,
-                            'exercise_id' => $exercise->id,
-                            'day_of_week' => $day,
-                            'frequency_per_week' => 3,
-                            'scheduled_time' => '09:00',
-                            'custom_repetitions' => $customReps,
-                            'custom_duration_minutes' => 30,
-                            'notes' => $recommendation['safety_notes'] ?? null,
-                        ]);
+                        // Select day pattern based on exercise index (alternate between pattern 0 and 1)
+                        $patternIndex = $exerciseIndex % 2;
+                        $selectedDays = $dayPatterns[$patternIndex][$frequency];
 
-                        \Log::info("Added exercise: {$exercise->name} to plan {$plan->id}");
+                        // Ensure selectedDays is always an array
+                        if (!is_array($selectedDays)) {
+                            $selectedDays = [$selectedDays];
+                        }
+
+                        // Create a PlanExercise record for each day
+                        foreach ($selectedDays as $day) {
+                            PlanExercise::create([
+                                'rehab_plan_id' => $plan->id,
+                                'exercise_id' => $exercise->id,
+                                'day_of_week' => $day,
+                                'frequency_per_week' => $frequency,
+                                'scheduled_time' => '09:00',
+                                'custom_repetitions' => $customReps,
+                                'custom_duration_minutes' => 30,
+                                'notes' => $recommendation['safety_notes'] ?? null,
+                            ]);
+                        }
+
+                        $exercisesAdded++;
+                        $exerciseIndex++;
+                        \Log::info("Added exercise: {$exercise->name} to plan {$plan->id} for {$frequency} day(s) using pattern {$patternIndex}");
                     } else {
                         \Log::warning("Exercise not found in database: {$recommendation['name']}");
                     }
                 }
+
+                return $exercisesAdded > 0;
             } else {
                 \Log::warning('No recommended exercises in ML response');
+                return false;
             }
         } catch (\Exception $e) {
             \Log::error('Failed to generate exercises automatically: ' . $e->getMessage());
-            // Continue without auto-generation - user can add manually
+            return false;
         }
     }
 
@@ -240,9 +287,28 @@ class PlanGeneratorController extends Controller
             'days_of_week.*' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'frequency_per_week' => 'required|integer|min:1|max:7',
             'scheduled_time' => 'nullable|date_format:H:i',
+            'scheduled_times' => 'nullable|array',
             'custom_repetitions' => 'nullable|integer|min:1',
             'custom_duration_minutes' => 'nullable|integer|min:1',
         ]);
+
+        // Get the next available time slot to avoid conflicts
+        $nextTimeSlot = $this->getNextAvailableTimeSlot($plan->id);
+
+        // Build scheduled_times array for per-day times
+        $scheduledTimes = [];
+        if ($request->has('scheduled_times') && is_array($validated['scheduled_times'])) {
+            // Use custom per-day times if provided
+            foreach ($validated['days_of_week'] as $day) {
+                $scheduledTimes[$day] = $validated['scheduled_times'][$day] ?? $nextTimeSlot;
+            }
+        } else {
+            // Use the same time for all days if no per-day times provided
+            $timeToUse = $validated['scheduled_time'] ?? $nextTimeSlot;
+            foreach ($validated['days_of_week'] as $day) {
+                $scheduledTimes[$day] = $timeToUse;
+            }
+        }
 
         // Create a PlanExercise record for each selected day
         foreach ($validated['days_of_week'] as $day) {
@@ -251,13 +317,50 @@ class PlanGeneratorController extends Controller
                 'exercise_id' => $validated['exercise_id'],
                 'day_of_week' => $day,
                 'frequency_per_week' => $validated['frequency_per_week'],
-                'scheduled_time' => $validated['scheduled_time'],
+                'scheduled_time' => $scheduledTimes[$day],
+                'scheduled_times' => $scheduledTimes,
                 'custom_repetitions' => $validated['custom_repetitions'],
                 'custom_duration_minutes' => $validated['custom_duration_minutes'],
             ]);
         }
 
         return back()->with('success', 'Exercise added to plan for ' . count($validated['days_of_week']) . ' day(s).');
+    }
+
+    /**
+     * Get the next available time slot to avoid exercise conflicts
+     * Returns time in H:i format, incrementing by 1 hour from base time
+     */
+    private function getNextAvailableTimeSlot($planId): string
+    {
+        $baseHour = 9; // Start at 9:00 AM
+        $maxHour = 17; // End at 5:00 PM
+
+        // Get all scheduled times for this plan
+        $planExercises = PlanExercise::where('rehab_plan_id', $planId)->get();
+
+        if ($planExercises->isEmpty()) {
+            return sprintf('%02d:00', $baseHour);
+        }
+
+        // Extract all used hours
+        $usedHours = [];
+        foreach ($planExercises as $exercise) {
+            if ($exercise->scheduled_time) {
+                $hour = (int) explode(':', $exercise->scheduled_time)[0];
+                $usedHours[$hour] = true;
+            }
+        }
+
+        // Find next available hour
+        for ($hour = $baseHour; $hour <= $maxHour; $hour++) {
+            if (!isset($usedHours[$hour])) {
+                return sprintf('%02d:00', $hour);
+            }
+        }
+
+        // If all hours are taken, wrap around or use the last available
+        return sprintf('%02d:00', $maxHour);
     }
 
     public function updateExercise(Request $request, $planId, $planExerciseId)
@@ -286,12 +389,27 @@ class PlanGeneratorController extends Controller
             'days_of_week' => 'required|array|min:1',
             'days_of_week.*' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'frequency_per_week' => 'required|integer|min:1|max:7',
-            'scheduled_time' => 'nullable|date_format:H:i:s',
+            'scheduled_time' => 'nullable|date_format:H:i',
+            'scheduled_times' => 'nullable|array',
             'custom_repetitions' => 'nullable|integer|min:1',
             'custom_duration_minutes' => 'nullable|integer|min:1',
         ]);
 
         \Log::info('Validated data:', $validated);
+
+        // Build scheduled_times array for per-day times
+        $scheduledTimes = [];
+        if ($request->has('scheduled_times') && is_array($validated['scheduled_times'])) {
+            // Use custom per-day times if provided
+            foreach ($validated['days_of_week'] as $day) {
+                $scheduledTimes[$day] = $validated['scheduled_times'][$day] ?? $validated['scheduled_time'];
+            }
+        } else {
+            // Use the same time for all days if no per-day times provided
+            foreach ($validated['days_of_week'] as $day) {
+                $scheduledTimes[$day] = $validated['scheduled_time'];
+            }
+        }
 
         // Delete all existing PlanExercise records for this exercise in this plan
         PlanExercise::where('rehab_plan_id', $plan->id)
@@ -305,7 +423,8 @@ class PlanGeneratorController extends Controller
                 'exercise_id' => $validated['exercise_id'],
                 'day_of_week' => $day,
                 'frequency_per_week' => $validated['frequency_per_week'],
-                'scheduled_time' => $validated['scheduled_time'],
+                'scheduled_time' => $scheduledTimes[$day],
+                'scheduled_times' => $scheduledTimes,
                 'custom_repetitions' => $validated['custom_repetitions'],
                 'custom_duration_minutes' => $validated['custom_duration_minutes'],
             ]);

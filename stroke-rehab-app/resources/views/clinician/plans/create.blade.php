@@ -111,39 +111,25 @@
                     @enderror
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="difficulty_level" class="block text-sm font-medium text-gray-700 mb-2">Difficulty Level *</label>
-                        <select id="difficulty_level" name="difficulty_level" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('difficulty_level') border-red-500 @enderror">
-                            <option value="">Select difficulty level</option>
-                            <option value="1" @if($mlPrediction && $mlPrediction['difficulty_level']==1) selected @endif>Level 1 - Very Easy</option>
-                            <option value="2" @if($mlPrediction && $mlPrediction['difficulty_level']==2) selected @endif>Level 2 - Easy</option>
-                            <option value="3" @if($mlPrediction && $mlPrediction['difficulty_level']==3) selected @endif>Level 3 - Moderate</option>
-                            <option value="4" @if($mlPrediction && $mlPrediction['difficulty_level']==4) selected @endif>Level 4 - Hard</option>
-                            <option value="5" @if($mlPrediction && $mlPrediction['difficulty_level']==5) selected @endif>Level 5 - Very Hard</option>
-                        </select>
-                        @error('difficulty_level')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="recovery_probability" class="block text-sm font-medium text-gray-700 mb-2">Recovery Probability (0-1)</label>
-                        <input type="number" id="recovery_probability" name="recovery_probability" min="0" max="1" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('recovery_probability') border-red-500 @enderror" placeholder="0.75" @if($mlPrediction) value="{{ $mlPrediction['recovery_probability'] }}" @endif>
-                        @error('recovery_probability')
-                        <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                </div>
-
                 <div>
-                    <label for="ml_confidence_score" class="block text-sm font-medium text-gray-700 mb-2">ML Model Confidence Score (0-1)</label>
-                    <input type="number" id="ml_confidence_score" name="ml_confidence_score" min="0" max="1" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('ml_confidence_score') border-red-500 @enderror" placeholder="0.75" @if($mlPrediction) value="{{ $mlPrediction['confidence_score'] }}" @endif>
-                    <p class="text-gray-500 text-sm mt-1">Automatically populated from ML model if available</p>
-                    @error('ml_confidence_score')
+                    <label for="difficulty_level" class="block text-sm font-medium text-gray-700 mb-2">Difficulty Level *</label>
+                    <select id="difficulty_level" name="difficulty_level" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('difficulty_level') border-red-500 @enderror">
+                        <option value="">Select difficulty level</option>
+                        <option value="1" @if($mlPrediction && $mlPrediction['difficulty_level']==1) selected @endif>Level 1 - Very Easy</option>
+                        <option value="2" @if($mlPrediction && $mlPrediction['difficulty_level']==2) selected @endif>Level 2 - Easy</option>
+                        <option value="3" @if($mlPrediction && $mlPrediction['difficulty_level']==3) selected @endif>Level 3 - Moderate</option>
+                        <option value="4" @if($mlPrediction && $mlPrediction['difficulty_level']==4) selected @endif>Level 4 - Hard</option>
+                        <option value="5" @if($mlPrediction && $mlPrediction['difficulty_level']==5) selected @endif>Level 5 - Very Hard</option>
+                    </select>
+                    @error('difficulty_level')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                @if($mlPrediction)
+                <input type="hidden" name="recovery_probability" value="{{ $mlPrediction['recovery_probability'] }}">
+                <input type="hidden" name="ml_confidence_score" value="{{ $mlPrediction['confidence_score'] }}">
+                @endif
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>

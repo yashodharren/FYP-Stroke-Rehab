@@ -12,6 +12,7 @@ class PlanExercise extends Model
         'day_of_week',
         'frequency_per_week',
         'scheduled_time',
+        'scheduled_times',
         'custom_repetitions',
         'custom_duration_minutes',
         'notes',
@@ -20,6 +21,7 @@ class PlanExercise extends Model
 
     protected $casts = [
         'is_completed' => 'boolean',
+        'scheduled_times' => 'json',
     ];
 
     public function rehabPlan()

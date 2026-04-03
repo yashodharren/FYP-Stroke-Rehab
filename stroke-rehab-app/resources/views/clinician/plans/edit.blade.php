@@ -121,21 +121,24 @@
                             <div id="daysError" class="text-red-600 text-sm mt-2" style="display:none;"></div>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label for="scheduled_time" class="block text-sm font-medium text-gray-700 mb-2">Scheduled Time</label>
-                                <input type="time" id="scheduled_time" name="scheduled_time" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Scheduled Times (per day)</label>
+                            <p class="text-xs text-gray-600 mb-3">Set specific times for each selected day. Leave blank for auto-assignment.</p>
+                            <div id="timesContainer" class="space-y-2 mb-4">
+                                <!-- Times will be dynamically added here based on selected days -->
                             </div>
+                        </div>
 
+                        <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="custom_repetitions" class="block text-sm font-medium text-gray-700 mb-2">Custom Repetitions</label>
                                 <input type="number" id="custom_repetitions" name="custom_repetitions" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Leave blank to use default">
                             </div>
-                        </div>
 
-                        <div>
-                            <label for="custom_duration_minutes" class="block text-sm font-medium text-gray-700 mb-2">Custom Duration (minutes)</label>
-                            <input type="number" id="custom_duration_minutes" name="custom_duration_minutes" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Leave blank to use default">
+                            <div>
+                                <label for="custom_duration_minutes" class="block text-sm font-medium text-gray-700 mb-2">Custom Duration (minutes)</label>
+                                <input type="number" id="custom_duration_minutes" name="custom_duration_minutes" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Leave blank to use default">
+                            </div>
                         </div>
 
                         <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
@@ -230,7 +233,34 @@
                 cb.checked = true;
             }
         });
+
+        // Update per-day time inputs
+        updateTimeInputs();
     }
+
+    function updateTimeInputs() {
+        const selectedDays = Array.from(document.querySelectorAll('.day-checkbox:checked')).map(cb => cb.value);
+        const timesContainer = document.getElementById('timesContainer');
+        timesContainer.innerHTML = '';
+
+        selectedDays.forEach(day => {
+            const timeInput = document.createElement('div');
+            timeInput.className = 'flex items-center gap-2';
+            timeInput.innerHTML = `
+                <label class="w-24 text-sm font-medium text-gray-700">${day}:</label>
+                <input type="time" name="scheduled_times[${day}]" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            `;
+            timesContainer.appendChild(timeInput);
+        });
+    }
+
+    // Add event listeners to day checkboxes
+    document.addEventListener('DOMContentLoaded', function() {
+        const dayCheckboxes = document.querySelectorAll('.day-checkbox');
+        dayCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateTimeInputs);
+        });
+    });
 
     function setFormMethod() {
         // Validate that at least one day is selected
