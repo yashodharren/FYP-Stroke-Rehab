@@ -106,6 +106,12 @@ Route::middleware('auth')->group(function () {
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::delete('/{message}', [ClinicianDashboardController::class, 'deleteMessage'])->name('delete');
         });
+
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [ClinicianDashboardController::class, 'showProfile'])->name('show');
+            Route::put('/update', [ClinicianDashboardController::class, 'updateProfile'])->name('update');
+            Route::put('/change-password', [ClinicianDashboardController::class, 'changePassword'])->name('change-password');
+        });
     });
 
     Route::prefix('patient')->name('patient.')->middleware('patient')->group(function () {
@@ -114,5 +120,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/schedule', [PatientDashboardController::class, 'schedule'])->name('schedule');
         Route::get('/appointments', [PatientDashboardController::class, 'appointments'])->name('appointments');
         Route::post('/feedback/{planExercise}', [PatientDashboardController::class, 'submitFeedback'])->name('feedback');
+
+        Route::prefix('profile')->name('profile.')->group(function () {
+            Route::get('/', [PatientDashboardController::class, 'showProfile'])->name('show');
+            Route::put('/update', [PatientDashboardController::class, 'updateProfile'])->name('update');
+            Route::put('/change-password', [PatientDashboardController::class, 'changePassword'])->name('change-password');
+        });
     });
 });

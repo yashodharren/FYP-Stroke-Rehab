@@ -9,7 +9,7 @@
             <h1 class="text-3xl font-bold text-gray-900">My Patients</h1>
             <p class="text-gray-600 mt-2">Manage your assigned patients and add new ones</p>
         </div>
-        <a href="{{ route('clinician.patients.create') }}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
+        <a href="{{ route('clinician.patients.create') }}" class="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 font-medium">
             + Add New Patient
         </a>
     </div>

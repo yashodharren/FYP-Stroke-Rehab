@@ -7,6 +7,8 @@ use App\Models\Patient;
 use App\Models\RehabPlan;
 use App\Models\ClinicianMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class DashboardController extends Controller
 {
@@ -65,5 +67,46 @@ class DashboardController extends Controller
 
         return redirect()->route('clinician.dashboard')
             ->with('success', 'Message deleted successfully.');
+    }
+
+    public function showProfile()
+    {
+        return view('clinician.profile');
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update($validated);
+
+        return redirect()->route('clinician.profile.show')
+            ->with('success', 'Profile updated successfully.');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $user = auth()->user();
+
+        $validated = $request->validate([
+            'current_password' => 'required',
+            'password' => ['required', 'confirmed', Password::min(8)],
+        ]);
+
+        if (!Hash::check($validated['current_password'], $user->password)) {
+            return back()->withErrors(['current_password' => 'The current password is incorrect.']);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return redirect()->route('clinician.profile.show')
+            ->with('success', 'Password changed successfully.');
     }
 }

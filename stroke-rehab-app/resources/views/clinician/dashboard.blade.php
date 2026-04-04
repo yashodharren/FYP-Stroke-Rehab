@@ -81,7 +81,7 @@
                     <form action="{{ route('clinician.messages.delete', $message->id) }}" method="POST" class="flex-shrink-0">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-green-600 hover:text-green-800 font-medium text-sm">Delete</button>
+                        <button type="submit" class="text-red-600 hover:text-red-800 font-medium text-sm">Delete</button>
                     </form>
                 </div>
                 @endforeach

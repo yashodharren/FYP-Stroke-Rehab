@@ -11,25 +11,25 @@
 <body class="bg-gray-50">
     <div class="flex h-screen">
         <!-- Sidebar -->
-        <div class="w-64 bg-gradient-to-b from-blue-700 to-blue-900 text-white shadow-lg">
-            <div class="p-6 border-b border-blue-600">
+        <div class="w-64 bg-gradient-to-b from-sky-500 to-sky-600 text-white shadow-lg flex flex-col">
+            <div class="p-6 border-b border-sky-300">
                 <h1 class="text-2xl font-bold">StrokeRehab</h1>
-                <p class="text-blue-200 text-sm mt-1">Clinician Portal</p>
+                <p class="text-sky-200 text-sm mt-1">Clinician Portal</p>
             </div>
 
             <!-- User Info -->
-            <div class="p-6 border-b border-blue-600">
-                <p class="text-sm text-blue-200">Logged in as</p>
+            <div class="p-6 border-b border-sky-300">
+                <p class="text-sm text-sky-200">Logged in as</p>
                 <p class="font-semibold text-white">{{ auth()->user()->name }}</p>
-                <p class="text-xs text-blue-300 mt-1">{{ auth()->user()->email }}</p>
+                <p class="text-xs text-sky-300 mt-1">{{ auth()->user()->email }}</p>
             </div>
 
             <!-- Navigation Menu -->
-            <nav class="mt-6">
+            <nav class="mt-6 flex-1 overflow-y-auto">
                 <div class="px-4 py-2">
                     <a href="{{ route('clinician.dashboard') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.dashboard')) bg-blue-600 text-white @else text-blue-100 hover:bg-blue-600 @endif">
+                       @if(request()->routeIs('clinician.dashboard')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 11l4-4m0 0l4 4m-4-4v4"></path>
                         </svg>
@@ -40,7 +40,7 @@
                 <div class="px-4 py-2">
                     <a href="{{ route('clinician.patients.index') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.patients.*')) bg-blue-600 text-white @else text-blue-100 hover:bg-blue-600 @endif">
+                       @if(request()->routeIs('clinician.patients.*')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z"></path>
                         </svg>
@@ -51,7 +51,7 @@
                 <div class="px-4 py-2">
                     <a href="{{ route('clinician.plans.index') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.plans.*')) bg-blue-600 text-white @else text-blue-100 hover:bg-blue-600 @endif">
+                       @if(request()->routeIs('clinician.plans.*')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
@@ -62,7 +62,7 @@
                 <div class="px-4 py-2">
                     <a href="{{ route('clinician.appointments.index') }}"
                         class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.appointments.*')) bg-blue-600 text-white @else text-blue-100 hover:bg-blue-600 @endif">
+                       @if(request()->routeIs('clinician.appointments.*')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
@@ -72,10 +72,10 @@
             </nav>
 
             <!-- Logout -->
-            <div class="absolute bottom-0 left-0 right-0 p-4">
-                <form method="POST" action="{{ route('logout') }}" class="inline">
+            <div class="p-4 border-t border-sky-300">
+                <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <button type="submit" class="inline-flex items-center gap-3 px-4 py-3 rounded-lg text-blue-100 hover:bg-blue-600 transition">
+                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sky-100 hover:bg-sky-700 transition">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                         </svg>
@@ -93,6 +93,7 @@
                     <h2 class="text-2xl font-bold text-gray-900">@yield('page_title', 'Dashboard')</h2>
                     <div class="flex items-center gap-4">
                         <span class="text-gray-600">{{ auth()->user()->name }}</span>
+                        <a href="{{ route('clinician.profile.show') }}" class="px-4 py-2 rounded-lg text-sky-600 hover:bg-sky-100 transition font-medium @if(request()->routeIs('clinician.profile.*')) bg-sky-100 text-sky-700 @endif">Profile</a>
                     </div>
                 </div>
             </div>
