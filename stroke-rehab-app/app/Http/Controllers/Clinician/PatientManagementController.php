@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Clinician;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Patient;
+use App\Models\ClinicianMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -88,8 +89,17 @@ class PatientManagementController extends Controller
 
         $patient = Patient::create($patientData);
 
+        // Save message to database
+        $messageText = "Patient '{$user->name}' created successfully. Temporary password: {$tempPassword}";
+        ClinicianMessage::create([
+            'clinician_id' => auth()->id(),
+            'patient_id' => $patient->id,
+            'message' => $messageText,
+            'type' => 'success',
+        ]);
+
         return redirect()->route('clinician.patients.index')
-            ->with('success', "Patient '{$user->name}' created successfully. Temporary password: {$tempPassword}");
+            ->with('success', $messageText);
     }
 
     /**

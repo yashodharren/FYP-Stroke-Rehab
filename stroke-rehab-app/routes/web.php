@@ -102,6 +102,10 @@ Route::middleware('auth')->group(function () {
         Route::prefix('appointments')->name('appointments.')->group(function () {
             Route::get('/', [ClinicianDashboardController::class, 'appointments'])->name('index');
         });
+
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::delete('/{message}', [ClinicianDashboardController::class, 'deleteMessage'])->name('delete');
+        });
     });
 
     Route::prefix('patient')->name('patient.')->middleware('patient')->group(function () {

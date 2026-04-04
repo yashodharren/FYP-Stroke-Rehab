@@ -59,6 +59,37 @@
         </div>
     </div>
 
+    <!-- Messages Section -->
+    @if($messages->count() > 0)
+    <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-900">Messages</h2>
+        </div>
+        <div class="p-6">
+            <div class="space-y-4">
+                @foreach($messages as $message)
+                <div class="flex items-start gap-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex-shrink-0 mt-1">
+                        <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-green-800">{{ $message->message }}</p>
+                        <p class="text-xs text-green-600 mt-2">{{ $message->created_at->format('M d, Y \a\t h:i A') }}</p>
+                    </div>
+                    <form action="{{ route('clinician.messages.delete', $message->id) }}" method="POST" class="flex-shrink-0">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-green-600 hover:text-green-800 font-medium text-sm">Delete</button>
+                    </form>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 class="text-xl font-bold text-gray-900">Appointment Reminders</h2>
