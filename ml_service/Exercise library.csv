@@ -1,11 +1,51 @@
-Exercise ID,Name,Target Deficit,Body Region,Difficulty (1−5),Equipment,Instructions,Progression/Reps,Safety/Contraindications
-EXE-001,Shoulder Shrug,Strength/ROM,Upper Limb,1,None,Sit straight; raise shoulders toward ears; hold for 3 seconds.,3 sets of 10 reps,"Avoid if shoulder ""hikes"" excessively."
-EXE-002,Hand & Wrist Stretch,Flexibility,Upper Limb,1,None,Place palms together; push left hand against right; hold for 3 seconds.,5 reps per side,Stop if experiencing sharp wrist pain.
-EXE-003,Seated Marching,Mobility,Lower Limb,2,Chair,"While seated, lift one knee as if marching; hold for 2 seconds.",2 sets of 15 reps,Ensure chair is stable and has a backrest.
-EXE-004,Towel Slide,Range of Motion,Upper Limb,2,"Towel, Table",Place towel under hand on table; slide forward and back with control.,3 sets of 10 reps,Do not force the stretch beyond comfort.
-EXE-005,Sit-to-Stand,Functional Strength,Lower Limb,3,Sturdy Chair,Rise from a seated position to standing using even weight on both legs.,3 sets of 10 reps,Use armrests for support if balance is unstable.
-EXE-006,Finger Tapping,Fine Motor,Upper Limb,3,None,Tap each finger against the thumb in a sequence (index to pinky).,2 minutes per hand,"Focus on isolation, not speed."
-EXE-007,Wall Push-ups,Strength,Core/Upper,3,Wall,Stand facing wall; place palms on wall; lean in and push away.,3 sets of 8 reps,Ensure feet are firmly planted.
-EXE-008,Squeeze Ball,Grip Strength,Upper Limb,2,Tennis Ball,Hold ball in affected hand; squeeze as hard as possible for 5 seconds.,3 sets of 5 reps,Relax hand fully between squeezes.
-EXE-009,Heel-to-Toe Stand,Balance,Lower Limb,4,Countertop,Stand with one foot directly in front of the other (tandem); hold balance.,Hold for 30 seconds,Always perform near a grab bar or counter.
-EXE-010,Single Leg Stance,Balance,Lower Limb,5,None,Lift one leg and stand on the other; hold for as long as possible.,Hold for 30−60 sec,Avoid if recent fall history exists without a carer.
+Exercise ID,Name,Target Deficit,Body Region,Difficulty,Equipment,Instructions,Progression Reps,Safety Notes
+EXE-001,Shoulder Shrug,Strength/ROM,Upper Limb,1,None,Sit straight and raise shoulders toward ears and hold for 3 seconds,3 sets of 10 reps,Avoid if shoulder hikes excessively
+EXE-002,Hand and Wrist Stretch,Flexibility,Upper Limb,1,None,Place palms together and push left hand against right and hold for 3 seconds,5 reps per side,Stop if experiencing sharp wrist pain
+EXE-003,Seated Marching,Mobility,Lower Limb,2,Chair,While seated lift one knee as if marching and hold for 2 seconds,2 sets of 15 reps,Ensure chair is stable and has a backrest
+EXE-004,Towel Slide,Range of Motion,Upper Limb,2,Towel and Table,Place towel under hand on table and slide forward and back with control,3 sets of 10 reps,Do not force the stretch beyond comfort
+EXE-005,Sit-to-Stand,Functional Strength,Lower Limb,3,Sturdy Chair,Rise from a seated position to standing using even weight on both legs,3 sets of 10 reps,Use armrests for support if balance is unstable
+EXE-006,Finger Tapping,Fine Motor,Upper Limb,3,None,Tap each finger against the thumb in a sequence from index to pinky,2 minutes per hand,Focus on isolation not speed
+EXE-007,Wall Push-ups,Strength,Core/Upper,3,Wall,Stand facing wall and place palms on wall and lean in and push away,3 sets of 8 reps,Ensure feet are firmly planted
+EXE-008,Squeeze Ball,Grip Strength,Upper Limb,2,Tennis Ball,Hold ball in affected hand and squeeze as hard as possible for 5 seconds,3 sets of 5 reps,Relax hand fully between squeezes
+EXE-009,Heel-to-Toe Stand,Balance,Lower Limb,4,Countertop,Stand with one foot directly in front of the other in tandem and hold balance,Hold for 30 seconds,Always perform near a grab bar or counter
+EXE-010,Single Leg Stance,Balance,Lower Limb,5,None,Lift one leg and stand on the other and hold for as long as possible,Hold for 30-60 sec,Avoid if recent fall history exists without a carer
+EXE-011,Facial Muscle Exercises,Facial Exercises,Face,1,None,Smile widely and hold for 3 seconds. Purse lips and hold for 3 seconds. Raise eyebrows and hold for 3 seconds,3 sets of 5 reps,Avoid if facial pain is present
+EXE-012,Cheek Puffing,Facial Exercises,Face,1,None,Puff out cheeks and hold for 3 seconds then release slowly,3 sets of 10 reps,Ensure mouth is closed during exercise
+EXE-013,Tongue Exercises,Speech/Swallowing,Face,2,None,Stick tongue out and hold for 3 seconds. Move tongue side to side slowly,3 sets of 10 reps,Stop if difficulty swallowing occurs
+EXE-014,Lip Rounding,Speech/Swallowing,Face,1,None,Round lips as if saying O and hold for 3 seconds. Then stretch lips as if saying E,3 sets of 10 reps,Maintain controlled breathing
+EXE-015,Speech Repetition,Speech Therapy,Face,2,None,Repeat simple words slowly ba-ba-ba pa-pa-pa ta-ta-ta for 1 minute each,1 minute per sound,Speak clearly and at comfortable pace
+EXE-016,Counting Exercise,Speech Therapy,Face,2,None,Count from 1 to 10 slowly and clearly and repeat 3 times,3 repetitions,Focus on clear articulation
+EXE-017,Swallowing Exercise,Speech/Swallowing,Face,2,None,Swallow saliva slowly and deliberately and practice dry swallows 5 times,5 dry swallows,Ensure water is available nearby
+EXE-018,Neck Stretches,Swallowing,Face,1,None,Gently tilt head toward each shoulder and hold for 15 seconds each side,3 sets of 5 reps,Do not force stretching beyond comfort
+EXE-019,Eye Tracking,Vision,Face,2,None,Follow a moving object with eyes only without head movement in all directions,2 minutes,Perform in well-lit environment
+EXE-020,Visual Scanning,Vision,Face,2,None,Scan room systematically from left to right and identify objects,3 minutes,Use objects at various distances
+EXE-021,Attention Focus,Cognitive,General,2,None,Focus on a single object for 1 minute without distraction and increase duration gradually,1-5 minutes,Reduce distractions in environment
+EXE-022,Memory Recall,Cognitive,General,2,None,Recall 5 items from a list after 1 minute and gradually increase number of items,5-10 items,Use familiar objects or words
+EXE-023,Puzzle Solving,Cognitive,General,3,Puzzle/Paper,Complete simple jigsaw puzzles or word searches appropriate to ability level,15-30 minutes,Choose puzzles matching cognitive level
+EXE-024,Reading Exercise,Cognitive,General,2,Book/Paper,Read aloud simple sentences or short passages and focus on comprehension,10-15 minutes,Use large print materials if needed
+EXE-025,Emotional Expression,Emotional Regulation,General,2,None,Practice expressing emotions through facial expressions and controlled breathing,5 minutes,Perform in calm environment
+EXE-026,Deep Breathing,Emotional Regulation,General,1,None,Inhale slowly for 4 counts and hold for 4 counts and exhale for 4 counts,5 minutes,Perform seated or lying down
+EXE-027,Relaxation Technique,Emotional Regulation,General,1,None,Tense and release muscle groups progressively from toes to head,10 minutes,Perform in quiet space
+EXE-028,Guided Imagery,Emotional Regulation,General,2,None,Visualize calm peaceful scenes while practicing slow breathing,10-15 minutes,Use quiet environment
+EXE-029,Knee Lifts,Lower Limb Strength,Lower Limb,2,Chair,Sit in chair and lift one knee up toward chest and hold for 2 seconds and lower slowly,3 sets of 10 reps,Keep back against chair
+EXE-030,Heel Slides,Lower Limb Strength,Lower Limb,2,Bed/Floor,Lie on back and slide heel toward buttock and hold for 2 seconds and slide back,3 sets of 10 reps,Use smooth surface for sliding
+EXE-031,Glute Squeezes,Lower Limb Strength,Lower Limb,2,None,Squeeze buttock muscles and hold for 5 seconds and release,3 sets of 10 reps,Perform seated or standing
+EXE-032,Calf Raises,Lower Limb Strength,Lower Limb,3,Countertop,Stand facing counter and rise up on toes and hold for 2 seconds and lower down,3 sets of 10 reps,Hold counter for balance
+EXE-033,Step-Ups,Lower Limb Strength,Lower Limb,3,Step/Stair,Step up onto low step with one leg and step down and alternate legs,3 sets of 8 reps,Use handrail for safety
+EXE-034,Tandem Walking,Balance,Lower Limb,4,None,Walk in straight line placing one foot directly in front of other,2-3 minutes,Perform near wall for safety
+EXE-035,Sit and Reach,Flexibility,Lower Limb,2,Chair,Sit in chair and reach toward toes and hold for 15 seconds and return to start,3 sets of 5 reps,Do not bounce or force stretch
+EXE-036,Hip Flexor Stretch,Flexibility,Lower Limb,2,Chair,Sit in chair and pull one knee toward chest and hold for 15 seconds each leg,3 sets of 5 reps,Keep back straight
+EXE-037,Arm Circles,Upper Limb Strength,Upper Limb,2,None,Extend arms out to sides and make small circles forward for 30 seconds and reverse,3 sets,Keep movements controlled
+EXE-038,Bicep Curls,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weight and bend elbow bringing weight toward shoulder and lower slowly,3 sets of 10 reps,Use light weight initially
+EXE-039,Tricep Extensions,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weight overhead and bend elbow lowering weight behind head and extend back up,3 sets of 10 reps,Keep elbow stationary
+EXE-040,Wrist Flexion,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weight with palm up and bend wrist upward and lower slowly,3 sets of 10 reps,Keep forearm supported
+EXE-041,Pronation Supination,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weight with arm bent and rotate forearm palm up then palm down,3 sets of 10 reps,Keep elbow at 90 degrees
+EXE-042,Shoulder Abduction,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weights at sides and raise arms out to sides to shoulder height and lower,3 sets of 10 reps,Keep movements slow and controlled
+EXE-043,Shoulder Flexion,Upper Limb Strength,Upper Limb,2,Dumbbell/Can,Hold weights at sides and raise arms forward to shoulder height and lower slowly,3 sets of 10 reps,Avoid arching back
+EXE-044,Seated Marching Advanced,Mobility,Lower Limb,3,Chair,Sit in chair and lift knees alternately higher than basic version and maintain rhythm,2 sets of 20 reps,Increase speed gradually
+EXE-045,Standing Balance,Balance,Lower Limb,3,Countertop,Stand with feet hip-width apart and maintain balance without holding counter,Hold for 30-60 sec,Have counter nearby for safety
+EXE-046,Gait Training,Functional Mobility,Lower Limb,3,Walker/Cane,Walk with assistive device focusing on even weight distribution and smooth gait,10-15 minutes,Use appropriate assistive device
+EXE-047,Stair Training,Functional Mobility,Lower Limb,4,Stairs,Practice going up and down stairs with handrail and one step at a time,5-10 minutes,Always use handrail
+EXE-048,Coordination Drill,Coordination,General,3,None,Touch nose with finger and then touch examiners finger at arms length and alternate,2 minutes,Perform slowly and deliberately
+EXE-049,Rapid Alternating,Coordination,General,3,None,Tap knees alternately with hands as quickly as possible while maintaining control,1 minute,Focus on accuracy over speed
+EXE-050,Cross Body Reach,Coordination,General,3,None,Reach right hand across body to touch left shoulder and alternate sides,3 sets of 10 reps,Keep movements smooth and controlled

@@ -44,6 +44,8 @@ if os.path.exists(EXERCISE_LIBRARY_PATH):
     try:
         exercise_library = pd.read_csv(EXERCISE_LIBRARY_PATH)
         print(f"✓ Exercise library loaded successfully ({len(exercise_library)} exercises)")
+        print(f"✓ Columns: {list(exercise_library.columns)}")
+        print(f"✓ Sample Target Deficits: {exercise_library['Target Deficit'].unique()[:10]}")
     except Exception as e:
         print(f"✗ Error loading exercise library: {e}")
 else:
@@ -166,31 +168,33 @@ def determine_difficulty_level(recovery_probability: float, rsbp: Optional[int] 
     return base_difficulty
 
 
-def get_deficit_to_body_region_mapping() -> dict:
-    """Map functional deficits to body regions and exercise types"""
+def get_deficit_to_exercise_mapping() -> dict:
+    """Map functional deficits to specific target deficits in exercise library"""
     return {
-        'rdef1': {'region': 'Face', 'type': 'Facial exercises'},
-        'rdef2': {'region': 'Upper Limb', 'type': 'Strength/ROM'},
-        'rdef3': {'region': 'Lower Limb', 'type': 'Mobility'},
-        'rdef4': {'region': 'Speech', 'type': 'Speech therapy'},
-        'rdef5': {'region': 'Vision', 'type': 'Visual tracking'},
-        'rdef6': {'region': 'Coordination', 'type': 'Balance'},
-        'rdef7': {'region': 'Balance', 'type': 'Balance'},
-        'rdef8': {'region': 'General', 'type': 'General'}
+        'rdef1': ['Facial Exercises', 'Speech/Swallowing'],  # Face Deficit
+        'rdef2': ['Strength/ROM', 'Fine Motor', 'Grip Strength'],  # Arm/Hand Deficit
+        'rdef3': ['Mobility', 'Balance', 'Functional Strength'],  # Leg/Foot Deficit
+        'rdef4': ['Speech Therapy', 'Speech/Swallowing'],  # Dysphasia (Speech)
+        'rdef5': ['Vision'],  # Hemianopia (Vision)
+        'rdef6': ['Coordination', 'Balance'],  # Visuospatial Disorder
+        'rdef7': ['Balance', 'Coordination'],  # Brainstem/Cerebellar Signs
+        'rdef8': ['General', 'Coordination', 'Functional Mobility']  # Other Deficits
     }
 
 
 def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_level: int) -> List[ExerciseRecommendation]:
     """
-    Select personalized exercises from library based on deficits and difficulty level
+    Select personalized exercises from library based on deficits and difficulty level.
+    Ensures diverse exercises are recommended for each specific deficit.
     """
     if exercise_library is None:
         return []
     
     selected_exercises = []
-    deficit_mapping = get_deficit_to_body_region_mapping()
+    selected_exercise_ids = set()  # Track selected exercises to avoid duplicates
+    deficit_mapping = get_deficit_to_exercise_mapping()
     
-    # Identify active deficits
+    # Identify active deficits with their descriptions
     deficits = []
     if clinical_data.rdef1:
         deficits.append(('rdef1', 'Face Deficit'))
@@ -209,48 +213,87 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
     if clinical_data.rdef8:
         deficits.append(('rdef8', 'Other Deficits'))
     
-    # If no deficits, return general exercises
+    # If no deficits, recommend general exercises
     if not deficits:
         deficits = [('general', 'General Recovery')]
     
     # Select exercises for each deficit
     for deficit_key, deficit_name in deficits:
-        region_info = deficit_mapping.get(deficit_key, {'region': 'General', 'type': 'General'})
-        body_region = region_info['region']
+        target_deficits = deficit_mapping.get(deficit_key, ['General'])
+        exercises_found_for_deficit = 0
         
-        # Filter exercises by body region and difficulty
-        matching_exercises = exercise_library[
-            (exercise_library['Body Region'].str.contains(body_region, case=False, na=False)) &
-            (exercise_library['Difficulty (1−5)'] <= difficulty_level)
-        ]
+        print(f"DEBUG: Processing deficit {deficit_key} ({deficit_name}), looking for target deficits: {target_deficits}")
         
-        # If no exact matches, try broader search
-        if matching_exercises.empty:
-            matching_exercises = exercise_library[
-                exercise_library['Difficulty (1−5)'] <= difficulty_level
-            ]
-        
-        # Select up to 2 exercises per deficit
-        for idx, (_, exercise) in enumerate(matching_exercises.iterrows()):
-            if idx >= 2:
+        # Try to find exercises matching the target deficits
+        for target_deficit in target_deficits:
+            if exercises_found_for_deficit >= 1:  # Max 1 exercise per deficit
                 break
             
-            try:
-                selected_exercises.append(ExerciseRecommendation(
-                    exercise_id=exercise.get('Exercise ID', f'EXE-{idx:03d}'),
-                    name=exercise.get('Name', 'Unknown Exercise'),
-                    target_deficit=deficit_name,
-                    body_region=body_region,
-                    difficulty=int(exercise.get('Difficulty (1−5)', difficulty_level)),
-                    instructions=exercise.get('Instructions', 'Follow standard protocol'),
-                    progression_reps=exercise.get('Progression/Reps', '3 sets of 10 reps'),
-                    safety_notes=exercise.get('Safety/Contraindications', 'Follow safety guidelines')
-                ))
-            except Exception as e:
-                print(f"Error processing exercise: {e}")
-                continue
+            # Filter exercises by target deficit and difficulty
+            matching_exercises = exercise_library[
+                (exercise_library['Target Deficit'].str.contains(target_deficit, case=False, na=False)) &
+                (exercise_library['Difficulty'] <= difficulty_level)
+            ]
+            
+            print(f"DEBUG: Found {len(matching_exercises)} exercises for target deficit '{target_deficit}' at difficulty <= {difficulty_level}")
+            
+            # Select exercises that haven't been selected yet
+            for _, exercise in matching_exercises.iterrows():
+                exercise_id = exercise.get('Exercise ID', '')
+                
+                # Skip if already selected
+                if exercise_id in selected_exercise_ids:
+                    continue
+                
+                try:
+                    selected_exercises.append(ExerciseRecommendation(
+                        exercise_id=exercise_id,
+                        name=exercise.get('Name', 'Unknown Exercise'),
+                        target_deficit=deficit_name,
+                        body_region=exercise.get('Body Region', 'General'),
+                        difficulty=int(exercise.get('Difficulty', difficulty_level)),
+                        instructions=exercise.get('Instructions', 'Follow standard protocol'),
+                        progression_reps=exercise.get('Progression Reps', '3 sets of 10 reps'),
+                        safety_notes=exercise.get('Safety Notes', 'Follow safety guidelines')
+                    ))
+                    selected_exercise_ids.add(exercise_id)
+                    exercises_found_for_deficit += 1
+                    break
+                except Exception as e:
+                    print(f"Error processing exercise: {e}")
+                    continue
+        
+        # If no specific exercises found, try broader search
+        if exercises_found_for_deficit == 0:
+            matching_exercises = exercise_library[
+                (exercise_library['Difficulty'] <= difficulty_level)
+            ]
+            
+            for _, exercise in matching_exercises.iterrows():
+                exercise_id = exercise.get('Exercise ID', '')
+                
+                # Skip if already selected
+                if exercise_id in selected_exercise_ids:
+                    continue
+                
+                try:
+                    selected_exercises.append(ExerciseRecommendation(
+                        exercise_id=exercise_id,
+                        name=exercise.get('Name', 'Unknown Exercise'),
+                        target_deficit=deficit_name,
+                        body_region=exercise.get('Body Region', 'General'),
+                        difficulty=int(exercise.get('Difficulty', difficulty_level)),
+                        instructions=exercise.get('Instructions', 'Follow standard protocol'),
+                        progression_reps=exercise.get('Progression Reps', '3 sets of 10 reps'),
+                        safety_notes=exercise.get('Safety Notes', 'Follow safety guidelines')
+                    ))
+                    selected_exercise_ids.add(exercise_id)
+                    break
+                except Exception as e:
+                    print(f"Error processing exercise: {e}")
+                    continue
     
-    # Return up to 5 exercises total
+    # Return up to 5 unique exercises total
     return selected_exercises[:5]
 
 
