@@ -91,9 +91,9 @@
     @endif
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-900">Appointment Reminders</h2>
-            <a href="{{ route('clinician.appointments.index') }}" class="text-blue-600 hover:text-blue-800 font-medium">View All</a>
+        <div class="px-6 py-4 border-b border-gray-200 flex bg-gradient-to-r from-cyan-500 to-blue-500 justify-between items-center">
+            <h2 class="text-xl font-bold text-white">Appointment Reminders</h2>
+            <a href="{{ route('clinician.appointments.index') }}" class="text-white hover:text-black font-medium">View All</a>
         </div>
         <div class="p-6">
             <div class="space-y-4">

@@ -80,9 +80,9 @@
     </div>
 
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h2 class="text-xl font-bold text-gray-900">Rehabilitation Plans</h2>
-            <a href="{{ route('clinician.plans.create', $patient->id) }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-xl font-bold text-white">Rehabilitation Plans</h2>
+            <a href="{{ route('clinician.plans.create', $patient->id) }}" class="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 font-medium">
                 Create New Plan
             </a>
         </div>

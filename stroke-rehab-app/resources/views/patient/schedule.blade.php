@@ -214,59 +214,58 @@
 @php
 function getExerciseColorClass($exerciseName) {
 $colorMap = [
-'Shoulder Shrug' => [
-'bg' => 'bg-green-50',
-'border' => 'border-green-500',
-'text' => 'text-green-600'
-],
-'Hand & Wrist Stretch' => [
-'bg' => 'bg-orange-50',
-'border' => 'border-orange-500',
-'text' => 'text-orange-600'
-],
-'Seated Marching' => [
-'bg' => 'bg-blue-50',
-'border' => 'border-blue-500',
-'text' => 'text-blue-600'
-],
-'Towel Slide' => [
-'bg' => 'bg-purple-50',
-'border' => 'border-purple-500',
-'text' => 'text-purple-600'
-],
-'Sit-to-Stand' => [
-'bg' => 'bg-red-50',
-'border' => 'border-red-500',
-'text' => 'text-red-600'
-],
-'Finger Tapping' => [
-'bg' => 'bg-yellow-50',
-'border' => 'border-yellow-500',
-'text' => 'text-yellow-600'
-],
-'Wall Push-ups' => [
-'bg' => 'bg-pink-50',
-'border' => 'border-pink-500',
-'text' => 'text-pink-600'
-],
-'Squeeze Ball' => [
-'bg' => 'bg-indigo-50',
-'border' => 'border-indigo-500',
-'text' => 'text-indigo-600'
-],
-'Heel-to-Toe Stand' => [
-'bg' => 'bg-cyan-50',
-'border' => 'border-cyan-500',
-'text' => 'text-cyan-600'
-],
-'Single Leg Stance' => [
-'bg' => 'bg-lime-50',
-'border' => 'border-lime-500',
-'text' => 'text-lime-600'
-],
+'Shoulder Shrug' => ['bg' => 'bg-green-50', 'border' => 'border-green-500', 'text' => 'text-green-600'],
+'Hand and Wrist Stretch' => ['bg' => 'bg-orange-50', 'border' => 'border-orange-500', 'text' => 'text-orange-600'],
+'Seated Marching' => ['bg' => 'bg-red-50', 'border' => 'border-red-500', 'text' => 'text-red-600'],
+'Towel Slide' => ['bg' => 'bg-purple-50', 'border' => 'border-purple-500', 'text' => 'text-purple-600'],
+'Sit-to-Stand' => ['bg' => 'bg-pink-50', 'border' => 'border-pink-500', 'text' => 'text-pink-600'],
+'Finger Tapping' => ['bg' => 'bg-yellow-50', 'border' => 'border-yellow-500', 'text' => 'text-yellow-600'],
+'Wall Push-ups' => ['bg' => 'bg-cyan-50', 'border' => 'border-cyan-500', 'text' => 'text-cyan-600'],
+'Squeeze Ball' => ['bg' => 'bg-blue-50', 'border' => 'border-blue-500', 'text' => 'text-blue-600'],
+'Heel-to-Toe Stand' => ['bg' => 'bg-indigo-50', 'border' => 'border-indigo-500', 'text' => 'text-indigo-600'],
+'Single Leg Stance' => ['bg' => 'bg-lime-50', 'border' => 'border-lime-500', 'text' => 'text-lime-600'],
+'Facial Muscle Exercises' => ['bg' => 'bg-rose-50', 'border' => 'border-rose-500', 'text' => 'text-rose-600'],
+'Cheek Puffing' => ['bg' => 'bg-fuchsia-50', 'border' => 'border-fuchsia-500', 'text' => 'text-fuchsia-600'],
+'Tongue Exercises' => ['bg' => 'bg-violet-50', 'border' => 'border-violet-500', 'text' => 'text-violet-600'],
+'Lip Rounding' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-500', 'text' => 'text-amber-600'],
+'Speech Repetition' => ['bg' => 'bg-sky-50', 'border' => 'border-sky-500', 'text' => 'text-sky-600'],
+'Counting Exercise' => ['bg' => 'bg-teal-50', 'border' => 'border-teal-500', 'text' => 'text-teal-600'],
+'Swallowing Exercise' => ['bg' => 'bg-emerald-50', 'border' => 'border-emerald-500', 'text' => 'text-emerald-600'],
+'Neck Stretches' => ['bg' => 'bg-slate-50', 'border' => 'border-slate-500', 'text' => 'text-slate-600'],
+'Eye Tracking' => ['bg' => 'bg-zinc-50', 'border' => 'border-zinc-500', 'text' => 'text-zinc-600'],
+'Visual Scanning' => ['bg' => 'bg-stone-50', 'border' => 'border-stone-500', 'text' => 'text-stone-600'],
+'Attention Focus' => ['bg' => 'bg-red-50', 'border' => 'border-red-500', 'text' => 'text-red-600'],
+'Memory Recall' => ['bg' => 'bg-orange-50', 'border' => 'border-orange-500', 'text' => 'text-orange-600'],
+'Puzzle Solving' => ['bg' => 'bg-yellow-50', 'border' => 'border-yellow-500', 'text' => 'text-yellow-600'],
+'Reading Exercise' => ['bg' => 'bg-green-50', 'border' => 'border-green-500', 'text' => 'text-green-600'],
+'Emotional Expression' => ['bg' => 'bg-cyan-50', 'border' => 'border-cyan-500', 'text' => 'text-cyan-600'],
+'Deep Breathing' => ['bg' => 'bg-blue-50', 'border' => 'border-blue-500', 'text' => 'text-blue-600'],
+'Relaxation Technique' => ['bg' => 'bg-purple-50', 'border' => 'border-purple-500', 'text' => 'text-purple-600'],
+'Guided Imagery' => ['bg' => 'bg-pink-50', 'border' => 'border-pink-500', 'text' => 'text-pink-600'],
+'Knee Lifts' => ['bg' => 'bg-rose-50', 'border' => 'border-rose-500', 'text' => 'text-rose-600'],
+'Heel Slides' => ['bg' => 'bg-fuchsia-50', 'border' => 'border-fuchsia-500', 'text' => 'text-fuchsia-600'],
+'Glute Squeezes' => ['bg' => 'bg-violet-50', 'border' => 'border-violet-500', 'text' => 'text-violet-600'],
+'Calf Raises' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-500', 'text' => 'text-amber-600'],
+'Step-Ups' => ['bg' => 'bg-sky-50', 'border' => 'border-sky-500', 'text' => 'text-sky-600'],
+'Tandem Walking' => ['bg' => 'bg-teal-50', 'border' => 'border-teal-500', 'text' => 'text-teal-600'],
+'Sit and Reach' => ['bg' => 'bg-emerald-50', 'border' => 'border-emerald-500', 'text' => 'text-emerald-600'],
+'Hip Flexor Stretch' => ['bg' => 'bg-slate-50', 'border' => 'border-slate-500', 'text' => 'text-slate-600'],
+'Arm Circles' => ['bg' => 'bg-zinc-50', 'border' => 'border-zinc-500', 'text' => 'text-zinc-600'],
+'Bicep Curls' => ['bg' => 'bg-stone-50', 'border' => 'border-stone-500', 'text' => 'text-stone-600'],
+'Tricep Extensions' => ['bg' => 'bg-red-50', 'border' => 'border-red-500', 'text' => 'text-red-600'],
+'Wrist Flexion' => ['bg' => 'bg-orange-50', 'border' => 'border-orange-500', 'text' => 'text-orange-600'],
+'Pronation Supination' => ['bg' => 'bg-yellow-50', 'border' => 'border-yellow-500', 'text' => 'text-yellow-600'],
+'Shoulder Abduction' => ['bg' => 'bg-green-50', 'border' => 'border-green-500', 'text' => 'text-green-600'],
+'Shoulder Flexion' => ['bg' => 'bg-cyan-50', 'border' => 'border-cyan-500', 'text' => 'text-cyan-600'],
+'Seated Marching Advanced' => ['bg' => 'bg-blue-50', 'border' => 'border-blue-500', 'text' => 'text-blue-600'],
+'Standing Balance' => ['bg' => 'bg-purple-50', 'border' => 'border-purple-500', 'text' => 'text-purple-600'],
+'Gait Training' => ['bg' => 'bg-pink-50', 'border' => 'border-pink-500', 'text' => 'text-pink-600'],
+'Stair Training' => ['bg' => 'bg-rose-50', 'border' => 'border-rose-500', 'text' => 'text-rose-600'],
+'Coordination Drill' => ['bg' => 'bg-fuchsia-50', 'border' => 'border-fuchsia-500', 'text' => 'text-fuchsia-600'],
+'Rapid Alternating' => ['bg' => 'bg-violet-50', 'border' => 'border-violet-500', 'text' => 'text-violet-600'],
+'Cross Body Reach' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-500', 'text' => 'text-amber-600'],
 ];
 
-// Return color class for the exercise, or default to green if not found
 return $colorMap[$exerciseName] ?? [
 'bg' => 'bg-gray-50',
 'border' => 'border-gray-500',

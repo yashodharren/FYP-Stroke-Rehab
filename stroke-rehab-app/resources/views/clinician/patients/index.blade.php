@@ -9,7 +9,7 @@
             <h1 class="text-3xl font-bold text-gray-900">My Patients</h1>
             <p class="text-gray-600 mt-2">Manage your assigned patients and add new ones</p>
         </div>
-        <a href="{{ route('clinician.patients.create') }}" class="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 font-medium">
+        <a href="{{ route('clinician.patients.create') }}" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">
             + Add New Patient
         </a>
     </div>
@@ -71,14 +71,14 @@
 
     <!-- My Patients Section -->
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900">Your Assigned Patients ({{ count($patients) }})</h2>
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-white">Your Assigned Patients ({{ count($patients) }})</h2>
         </div>
 
         @if(count($patients) > 0)
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-gray-200 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Stroke Type</th>

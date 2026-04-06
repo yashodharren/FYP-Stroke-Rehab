@@ -186,6 +186,11 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
     """
     Select personalized exercises from library based on deficits and difficulty level.
     Ensures diverse exercises are recommended for each specific deficit.
+    
+    Exercise recommendation logic:
+    - 1 deficit: 2-3 exercises
+    - 2 deficits: 2 exercises per deficit (4 total)
+    - 3+ deficits: 1 exercise per deficit
     """
     if exercise_library is None:
         return []
@@ -217,6 +222,17 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
     if not deficits:
         deficits = [('general', 'General Recovery')]
     
+    # Determine exercises per deficit based on number of deficits
+    num_deficits = len(deficits)
+    if num_deficits == 1:
+        exercises_per_deficit = 3  # 2-3 exercises for single deficit
+    elif num_deficits == 2:
+        exercises_per_deficit = 2  # 2 exercises per deficit
+    else:
+        exercises_per_deficit = 1  # 1 exercise per deficit for 3+ deficits
+    
+    print(f"DEBUG: Patient has {num_deficits} deficit(s). Recommending {exercises_per_deficit} exercise(s) per deficit")
+    
     # Select exercises for each deficit
     for deficit_key, deficit_name in deficits:
         target_deficits = deficit_mapping.get(deficit_key, ['General'])
@@ -226,7 +242,7 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
         
         # Try to find exercises matching the target deficits
         for target_deficit in target_deficits:
-            if exercises_found_for_deficit >= 1:  # Max 1 exercise per deficit
+            if exercises_found_for_deficit >= exercises_per_deficit:
                 break
             
             # Filter exercises by target deficit and difficulty
@@ -239,6 +255,9 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
             
             # Select exercises that haven't been selected yet
             for _, exercise in matching_exercises.iterrows():
+                if exercises_found_for_deficit >= exercises_per_deficit:
+                    break
+                    
                 exercise_id = exercise.get('Exercise ID', '')
                 
                 # Skip if already selected
@@ -258,18 +277,20 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
                     ))
                     selected_exercise_ids.add(exercise_id)
                     exercises_found_for_deficit += 1
-                    break
                 except Exception as e:
                     print(f"Error processing exercise: {e}")
                     continue
         
-        # If no specific exercises found, try broader search
-        if exercises_found_for_deficit == 0:
+        # If not enough exercises found, try broader search
+        if exercises_found_for_deficit < exercises_per_deficit:
             matching_exercises = exercise_library[
                 (exercise_library['Difficulty'] <= difficulty_level)
             ]
             
             for _, exercise in matching_exercises.iterrows():
+                if exercises_found_for_deficit >= exercises_per_deficit:
+                    break
+                    
                 exercise_id = exercise.get('Exercise ID', '')
                 
                 # Skip if already selected
@@ -288,13 +309,13 @@ def select_exercises_from_library(clinical_data: ISTClinicalData, difficulty_lev
                         safety_notes=exercise.get('Safety Notes', 'Follow safety guidelines')
                     ))
                     selected_exercise_ids.add(exercise_id)
-                    break
+                    exercises_found_for_deficit += 1
                 except Exception as e:
                     print(f"Error processing exercise: {e}")
                     continue
     
-    # Return up to 5 unique exercises total
-    return selected_exercises[:5]
+    # Return exercises (no hard cap, let the total be determined by deficit count)
+    return selected_exercises
 
 
 def generate_clinical_notes(clinical_data: ISTClinicalData, recovery_probability: float, difficulty_level: int) -> str:

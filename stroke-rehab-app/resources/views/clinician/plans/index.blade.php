@@ -20,7 +20,7 @@
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-gray-200 border-b border-gray-200">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Plan Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Patient</th>

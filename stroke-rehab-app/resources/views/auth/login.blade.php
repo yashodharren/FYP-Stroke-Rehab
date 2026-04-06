@@ -78,7 +78,7 @@
                     </div>
                     <div class="bg-purple-50 p-3 rounded">
                         <p class="font-semibold text-purple-900">Patient</p>
-                        <p class="text-purple-700">patient1@rehab.local</p>
+                        <p class="text-purple-700">patient@rehab.local</p>
                         <p class="text-purple-700">password</p>
                     </div>
                 </div>
