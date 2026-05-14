@@ -33,6 +33,24 @@ class DashboardController extends Controller
         ]);
     }
 
+    public function feedbackIndex()
+    {
+        $clinician = auth()->user();
+
+        $feedbackByPatient = PatientFeedback::whereHas('patient', function ($q) use ($clinician) {
+            $q->where('clinician_id', $clinician->id);
+        })
+            ->where('is_plan_feedback', true)
+            ->with(['patient.user', 'planExercise.exercise', 'rehabPlan'])
+            ->orderByDesc('feedback_date')
+            ->get()
+            ->groupBy('patient_id');
+
+        return view('clinician.feedback.index', [
+            'feedbackByPatient' => $feedbackByPatient,
+        ]);
+    }
+
     public function showPatient($patientId)
     {
         $clinician = auth()->user();

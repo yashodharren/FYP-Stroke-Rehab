@@ -27,6 +27,14 @@ class DashboardController extends Controller
         // Check if feedback should be prompted
         $showFeedbackPrompt = $activePlan ? $this->shouldPromptFeedback($activePlan, $planExercises) : false;
 
+        // Only mark feedback_requested AFTER we know the view will render successfully
+        if ($showFeedbackPrompt) {
+            $activePlan->update([
+                'feedback_requested'    => true,
+                'feedback_requested_at' => now(),
+            ]);
+        }
+
         return view('patient.dashboard', [
             'patient' => $patient,
             'activePlan' => $activePlan,
@@ -49,6 +57,63 @@ class DashboardController extends Controller
             'patient' => $patient,
             'activePlan' => $activePlan,
             'schedule' => $schedule,
+        ]);
+    }
+
+    public function progress()
+    {
+        $user = auth()->user();
+        $patient = Patient::where('user_id', $user->id)->firstOrFail();
+        $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
+        $planExercises = $activePlan ? $activePlan->exercises()->with('exercise')->get() : collect();
+
+        // Overall completion stats
+        $totalExercises = $planExercises->count();
+        $completedExercises = $planExercises->where('is_completed', true)->count();
+        $missedExercises = $totalExercises - $completedExercises;
+        $completionRate = $totalExercises > 0 ? round(($completedExercises / $totalExercises) * 100) : 0;
+
+        // Per-day breakdown (across the weekly schedule)
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $dailyStats = [];
+        foreach ($days as $day) {
+            $dayExercises = $planExercises->where('day_of_week', $day);
+            $dayTotal = $dayExercises->count();
+            $dayDone = $dayExercises->where('is_completed', true)->count();
+            $dailyStats[$day] = [
+                'total' => $dayTotal,
+                'done'  => $dayDone,
+                'missed' => $dayTotal - $dayDone,
+                'rate'  => $dayTotal > 0 ? round(($dayDone / $dayTotal) * 100) : 0,
+            ];
+        }
+
+        // Per-exercise breakdown
+        $exerciseStats = $planExercises->map(function ($pe) {
+            return [
+                'name'        => $pe->exercise->name,
+                'target_area' => $pe->exercise->target_area,
+                'day'         => $pe->day_of_week,
+                'completed'   => $pe->is_completed,
+                'completed_at' => $pe->completed_at ? $pe->completed_at->format('M d, Y H:i') : null,
+            ];
+        })->values();
+
+        // Group completed_at timestamps by date for the activity heatmap (last 30 days)
+        $completedDates = $planExercises->filter(fn($pe) => $pe->completed_at)
+            ->groupBy(fn($pe) => $pe->completed_at->format('Y-m-d'))
+            ->map(fn($group) => $group->count())
+            ->toArray();
+
+        return view('patient.progress', [
+            'activePlan'       => $activePlan,
+            'totalExercises'   => $totalExercises,
+            'completedExercises' => $completedExercises,
+            'missedExercises'  => $missedExercises,
+            'completionRate'   => $completionRate,
+            'dailyStats'       => $dailyStats,
+            'exerciseStats'    => $exerciseStats,
+            'completedDates'   => $completedDates,
         ]);
     }
 
@@ -123,12 +188,54 @@ class DashboardController extends Controller
         }
 
         $plan->update([
-            'feedback_requested' => false,
-            'feedback_requested_at' => null,
+            'feedback_requested' => true,
+            'feedback_requested_at' => now(),
         ]);
 
         return redirect()->route('patient.dashboard')
             ->with('success', 'Thank you for your feedback! Your clinician will review and may recommend a new plan.');
+    }
+
+    /**
+     * Standalone feedback form page — accessible any time, shows eligibility status.
+     */
+    public function feedbackForm()
+    {
+        $user = auth()->user();
+        $patient = Patient::where('user_id', $user->id)->firstOrFail();
+        $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
+        $planExercises = $activePlan ? $activePlan->exercises()->with('exercise')->get() : collect();
+
+        $total = $planExercises->count();
+        $completed = $planExercises->where('is_completed', true)->count();
+        $completionRate = $total > 0 ? round(($completed / $total) * 100) : 0;
+        $daysOnPlan = $activePlan && $activePlan->start_date
+            ? (int) $activePlan->start_date->diffInDays(now())
+            : 0;
+
+        $eligible = $this->isEligibleForFeedback($activePlan, $planExercises);
+
+        // Ineligibility reasons for user-facing messaging
+        $reasons = [];
+        if (!$activePlan) {
+            $reasons[] = 'You do not have an active rehabilitation plan.';
+        } else {
+            if ($daysOnPlan < 30) {
+                $reasons[] = "Your plan must be at least 30 days old (currently {$daysOnPlan} days).";
+            }
+            if ($completionRate < 60) {
+                $reasons[] = "You must complete at least 60% of your exercises (currently {$completionRate}%).";
+            }
+        }
+
+        return view('patient.feedback-form', [
+            'activePlan'     => $activePlan,
+            'planExercises'  => $planExercises,
+            'eligible'       => $eligible,
+            'reasons'        => $reasons,
+            'completionRate' => $completionRate,
+            'daysOnPlan'     => $daysOnPlan,
+        ]);
     }
 
     /**
@@ -138,6 +245,18 @@ class DashboardController extends Controller
     private function shouldPromptFeedback($activePlan, $planExercises): bool
     {
         if (!$activePlan || $activePlan->feedback_requested) {
+            return false;
+        }
+
+        return $this->isEligibleForFeedback($activePlan, $planExercises);
+    }
+
+    /**
+     * Pure eligibility check — no side effects.
+     */
+    private function isEligibleForFeedback($activePlan, $planExercises): bool
+    {
+        if (!$activePlan) {
             return false;
         }
 
@@ -153,17 +272,9 @@ class DashboardController extends Controller
         }
 
         $completed = $planExercises->where('is_completed', true)->count();
-        $completionRate = $completed / $total;
-
-        if ($completionRate < 0.6) {
+        if (($completed / $total) < 0.6) {
             return false;
         }
-
-        // Mark that we've requested feedback so the prompt only shows once
-        $activePlan->update([
-            'feedback_requested' => true,
-            'feedback_requested_at' => now(),
-        ]);
 
         return true;
     }
@@ -296,7 +407,12 @@ class DashboardController extends Controller
 
     public function showProfile()
     {
-        return view('patient.profile');
+        $user = auth()->user();
+        $patient = Patient::where('user_id', $user->id)->firstOrFail();
+        return view('patient.profile', [
+            'patient' => $patient,
+            'user'    => $user,
+        ]);
     }
 
     public function updateProfile(Request $request)

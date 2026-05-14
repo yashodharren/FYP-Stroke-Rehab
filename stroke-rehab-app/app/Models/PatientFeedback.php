@@ -21,8 +21,9 @@ class PatientFeedback extends Model
     ];
 
     protected $casts = [
-        'feedback_date' => 'timestamp',
+        'feedback_date' => 'datetime',
         'completed_exercise' => 'boolean',
+        'is_plan_feedback' => 'boolean',
     ];
 
     public function patient()
@@ -33,5 +34,10 @@ class PatientFeedback extends Model
     public function planExercise()
     {
         return $this->belongsTo(PlanExercise::class);
+    }
+
+    public function rehabPlan()
+    {
+        return $this->belongsTo(RehabPlan::class);
     }
 }

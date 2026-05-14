@@ -11,6 +11,16 @@
 @endif
 
 @if($activePlan)
+@php
+$todayName = \Carbon\Carbon::now()->format('l');
+$weekDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+// Build Mon=0..Sun=6 offset from this week's Monday
+$monday = \Carbon\Carbon::now()->startOfWeek(\Carbon\Carbon::MONDAY);
+$dayDates = [];
+foreach($weekDays as $i => $d) {
+$dayDates[$d] = $monday->copy()->addDays($i);
+}
+@endphp
 <!-- Calendar View Toggle -->
 <div class="mb-6 flex gap-4">
     <button onclick="showCalendarView()" id="calendarViewBtn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
@@ -29,7 +39,11 @@
                 <tr class="bg-gradient-to-r from-green-500 to-teal-500">
                     <th class="border border-gray-300 px-4 py-3 text-white font-semibold text-left w-24">Time</th>
                     @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
-                    <th class="border border-gray-300 px-4 py-3 text-white font-semibold text-center">{{ substr($day, 0, 3) }}</th>
+                    <th class="border border-gray-300 px-4 py-3 font-semibold text-center {{ $day === $todayName ? 'bg-white bg-opacity-20' : '' }}">
+                        <span class="block text-white text-sm">{{ substr($day, 0, 3) }}</span>
+                        <span class="block text-xs {{ $day === $todayName ? 'text-yellow-200 font-bold' : 'text-green-100' }}">{{ $dayDates[$day]->format('M j') }}</span>
+                        @if($day === $todayName)<span class="block text-xs text-yellow-300 font-bold">Today</span>@endif
+                    </th>
                     @endforeach
                 </tr>
             </thead>
@@ -62,12 +76,18 @@
                                 <button onclick="showExerciseDetails({{ $pe->id }})" class="text-xs {{ $colorClass['text'] }} hover:opacity-80 font-medium">
                                     View
                                 </button>
+                                @if($day === $todayName)
                                 <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
                                     @csrf
                                     <button type="submit" class="text-xs {{ $pe->is_completed ? 'text-gray-500' : 'text-green-600' }} hover:opacity-80 font-medium">
                                         {{ $pe->is_completed ? 'Undo' : 'Done' }}
                                     </button>
                                 </form>
+                                @elseif($pe->is_completed)
+                                <span class="text-xs text-green-600 font-medium">✓ Done</span>
+                                @else
+                                <span class="text-xs text-gray-400 cursor-not-allowed" title="Only today's exercises can be marked">🔒</span>
+                                @endif
                             </div>
                         </div>
                         @else
@@ -86,8 +106,14 @@
 <div id="listView" class="hidden grid grid-cols-1 gap-6">
     @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $day)
     <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="bg-gradient-to-r from-green-500 to-teal-500 px-6 py-4">
-            <h2 class="text-2xl font-bold text-white">{{ $day }}</h2>
+        <div class="bg-gradient-to-r from-green-500 to-teal-500 px-6 py-4 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold text-white">{{ $day }}</h2>
+                <p class="text-green-100 text-sm mt-0.5">{{ $dayDates[$day]->format('F j, Y') }}</p>
+            </div>
+            @if($day === $todayName)
+            <span class="bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">Today</span>
+            @endif
         </div>
         <div class="p-6">
             @if($schedule['byDay'][$day]->count() > 0)
@@ -138,6 +164,7 @@
                     </div>
 
                     <div class="border-t border-gray-200 pt-4 flex flex-wrap gap-3 items-start">
+                        @if($day === $todayName)
                         <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
                             @csrf
                             <button type="submit"
@@ -155,6 +182,21 @@
                                 @endif
                             </button>
                         </form>
+                        @elseif($planExercise->is_completed)
+                        <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Completed
+                        </span>
+                        @else
+                        <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm inline-flex items-center gap-2 cursor-not-allowed" title="Only today's exercises can be marked as done">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            {{ $day === $todayName ? 'Mark as Done' : 'Locked' }}
+                        </span>
+                        @endif
                         <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
                             class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm inline-flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -99,6 +99,8 @@ Route::middleware('auth')->group(function () {
             Route::post('/{plan}/status', [PlanGeneratorController::class, 'updateStatus'])->name('update-status');
         });
 
+        Route::get('/feedback', [ClinicianDashboardController::class, 'feedbackIndex'])->name('feedback.index');
+
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::delete('/{message}', [ClinicianDashboardController::class, 'deleteMessage'])->name('delete');
         });
@@ -114,6 +116,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
         Route::get('/details', [PatientDashboardController::class, 'details'])->name('details');
         Route::get('/schedule', [PatientDashboardController::class, 'schedule'])->name('schedule');
+        Route::get('/progress', [PatientDashboardController::class, 'progress'])->name('progress');
+        Route::get('/feedback', [PatientDashboardController::class, 'feedbackForm'])->name('feedback-form');
         Route::post('/feedback/{planExercise}', [PatientDashboardController::class, 'submitFeedback'])->name('feedback');
         Route::post('/reschedule/{planExercise}', [PatientDashboardController::class, 'rescheduleExercise'])->name('reschedule');
         Route::post('/mark-done/{planExercise}', [PatientDashboardController::class, 'markDone'])->name('mark-done');
