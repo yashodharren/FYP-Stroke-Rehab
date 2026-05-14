@@ -88,7 +88,6 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::prefix('plans')->name('plans.')->group(function () {
-            Route::get('/', [PlanGeneratorController::class, 'indexPlans'])->name('index');
             Route::get('/create/{patient}', [PlanGeneratorController::class, 'create'])->name('create');
             Route::post('/store/{patient}', [PlanGeneratorController::class, 'store'])->name('store');
             Route::get('/{plan}/edit', [PlanGeneratorController::class, 'edit'])->name('edit');
@@ -97,10 +96,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{planExercise}/remove', [PlanGeneratorController::class, 'removeExercise'])->name('remove-exercise');
             Route::delete('/{plan}/delete', [PlanGeneratorController::class, 'deletePlan'])->name('delete');
             Route::post('/{plan}/publish', [PlanGeneratorController::class, 'publish'])->name('publish');
-        });
-
-        Route::prefix('appointments')->name('appointments.')->group(function () {
-            Route::get('/', [ClinicianDashboardController::class, 'appointments'])->name('index');
+            Route::post('/{plan}/status', [PlanGeneratorController::class, 'updateStatus'])->name('update-status');
         });
 
         Route::prefix('messages')->name('messages.')->group(function () {
@@ -118,8 +114,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [PatientDashboardController::class, 'index'])->name('dashboard');
         Route::get('/details', [PatientDashboardController::class, 'details'])->name('details');
         Route::get('/schedule', [PatientDashboardController::class, 'schedule'])->name('schedule');
-        Route::get('/appointments', [PatientDashboardController::class, 'appointments'])->name('appointments');
         Route::post('/feedback/{planExercise}', [PatientDashboardController::class, 'submitFeedback'])->name('feedback');
+        Route::post('/reschedule/{planExercise}', [PatientDashboardController::class, 'rescheduleExercise'])->name('reschedule');
+        Route::post('/mark-done/{planExercise}', [PatientDashboardController::class, 'markDone'])->name('mark-done');
+        Route::post('/plan-feedback/{plan}', [PatientDashboardController::class, 'submitPlanFeedback'])->name('plan-feedback');
 
         Route::prefix('profile')->name('profile.')->group(function () {
             Route::get('/', [PatientDashboardController::class, 'showProfile'])->name('show');

@@ -9,6 +9,24 @@
             <p class="text-gray-600 mt-2">For {{ $patient->user->name }}</p>
         </div>
 
+        @if(!empty($feedbackSuggestion))
+        <div class="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-5 rounded-lg">
+            <h3 class="text-base font-bold text-amber-900 mb-2">📋 Plan Based on Patient Feedback</h3>
+            <p class="text-sm text-amber-800 mb-3">
+                The patient's previous feedback (avg pain: <strong>{{ $feedbackSuggestion['avg_pain'] }}/10</strong>,
+                avg difficulty: <strong>{{ $feedbackSuggestion['avg_difficulty'] }}/5</strong>) suggests
+                <strong>{{ $feedbackSuggestion['reason'] }}</strong>.
+            </p>
+            @if($feedbackSuggestion['overall_comments'])
+            <p class="text-sm text-amber-700 mb-3 italic">"{{ $feedbackSuggestion['overall_comments'] }}"</p>
+            @endif
+            <p class="text-sm font-medium text-amber-900">
+                Recommended difficulty for next plan:
+                <span class="px-2 py-1 bg-amber-200 text-amber-900 rounded font-bold">Level {{ $feedbackSuggestion['suggested_difficulty'] }}/5</span>
+            </p>
+        </div>
+        @endif
+
         <div class="bg-white rounded-lg shadow p-8">
             @if($mlAvailable && $mlPrediction)
             <div class="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-lg">
@@ -115,11 +133,12 @@
                     <label for="difficulty_level" class="block text-sm font-medium text-gray-700 mb-2">Difficulty Level *</label>
                     <select id="difficulty_level" name="difficulty_level" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('difficulty_level') border-red-500 @enderror">
                         <option value="">Select difficulty level</option>
-                        <option value="1" @if($mlPrediction && $mlPrediction['difficulty_level']==1) selected @endif>Level 1 - Very Easy</option>
-                        <option value="2" @if($mlPrediction && $mlPrediction['difficulty_level']==2) selected @endif>Level 2 - Easy</option>
-                        <option value="3" @if($mlPrediction && $mlPrediction['difficulty_level']==3) selected @endif>Level 3 - Moderate</option>
-                        <option value="4" @if($mlPrediction && $mlPrediction['difficulty_level']==4) selected @endif>Level 4 - Hard</option>
-                        <option value="5" @if($mlPrediction && $mlPrediction['difficulty_level']==5) selected @endif>Level 5 - Very Hard</option>
+                        @php $suggestedLevel = !empty($feedbackSuggestion) ? $feedbackSuggestion['suggested_difficulty'] : ($mlPrediction['difficulty_level'] ?? null); @endphp
+                        <option value="1" @if($suggestedLevel==1) selected @endif>Level 1 - Very Easy</option>
+                        <option value="2" @if($suggestedLevel==2) selected @endif>Level 2 - Easy</option>
+                        <option value="3" @if($suggestedLevel==3) selected @endif>Level 3 - Moderate</option>
+                        <option value="4" @if($suggestedLevel==4) selected @endif>Level 4 - Hard</option>
+                        <option value="5" @if($suggestedLevel==5) selected @endif>Level 5 - Very Hard</option>
                     </select>
                     @error('difficulty_level')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>

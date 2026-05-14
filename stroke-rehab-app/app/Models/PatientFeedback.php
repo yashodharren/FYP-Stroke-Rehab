@@ -9,10 +9,13 @@ class PatientFeedback extends Model
     protected $fillable = [
         'patient_id',
         'plan_exercise_id',
+        'rehab_plan_id',
+        'is_plan_feedback',
         'pain_level',
         'difficulty_rating',
         'mood_rating',
         'comments',
+        'overall_comments',
         'completed_exercise',
         'feedback_date',
     ];

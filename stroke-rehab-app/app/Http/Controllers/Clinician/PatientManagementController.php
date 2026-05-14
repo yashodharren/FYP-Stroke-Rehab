@@ -199,6 +199,13 @@ class PatientManagementController extends Controller
             'recovery_status' => 'required|in:new,in_progress,completed,paused',
         ]);
 
+        // Unchecked checkboxes are not submitted by the browser, so we must
+        // explicitly set each deficit field to ensure unticked deficits are
+        // saved as false instead of retaining their previous value.
+        foreach (['rdef1', 'rdef2', 'rdef3', 'rdef4', 'rdef5', 'rdef6', 'rdef7', 'rdef8'] as $deficit) {
+            $validated[$deficit] = $request->boolean($deficit);
+        }
+
         $patient->update($validated);
 
         return redirect()->route('clinician.patients.index')

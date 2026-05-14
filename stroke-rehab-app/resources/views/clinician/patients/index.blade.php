@@ -83,7 +83,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Name</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Stroke Type</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Age</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Recovery Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Plan Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Rehab Plan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Patient Info</th>
                     </tr>
@@ -94,21 +94,27 @@
                         <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $patient->user->name }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $patient->stroke_subtype ?? 'N/A' }}</td>
                         <td class="px-6 py-4 text-sm text-gray-600">{{ $patient->age ?? 'N/A' }}</td>
+                        @php
+                        $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
+                        $latestPlan = $activePlan ?? $patient->rehabPlans()->orderByDesc('id')->first();
+                        $planStatus = $latestPlan->status ?? null;
+                        @endphp
                         <td class="px-6 py-4 text-sm">
+                            @if($planStatus)
                             <span class="px-3 py-1 rounded-full text-xs font-medium
-                                @if($patient->recovery_status === 'new') bg-blue-100 text-blue-800
-                                @elseif($patient->recovery_status === 'in_progress') bg-yellow-100 text-yellow-800
-                                @elseif($patient->recovery_status === 'completed') bg-green-100 text-green-800
-                                @elseif($patient->recovery_status === 'paused') bg-red-100 text-red-800
+                                @if($planStatus === 'draft') bg-gray-100 text-gray-800
+                                @elseif($planStatus === 'active') bg-green-100 text-green-800
+                                @elseif($planStatus === 'completed') bg-blue-100 text-blue-800
+                                @elseif($planStatus === 'paused') bg-yellow-100 text-yellow-800
                                 @else bg-gray-100 text-gray-800
                                 @endif">
-                                {{ ucfirst(str_replace('_', ' ', $patient->recovery_status)) }}
+                                {{ ucfirst($planStatus) }}
                             </span>
+                            @else
+                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">No Plan</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            @php
-                            $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
-                            @endphp
                             @if($activePlan)
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('clinician.plans.edit', $activePlan->id) }}" class="text-blue-600 hover:text-blue-800 font-medium">

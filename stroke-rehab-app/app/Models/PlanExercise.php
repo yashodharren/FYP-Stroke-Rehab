@@ -17,11 +17,13 @@ class PlanExercise extends Model
         'custom_duration_minutes',
         'notes',
         'is_completed',
+        'completed_at',
     ];
 
     protected $casts = [
         'is_completed' => 'boolean',
         'scheduled_times' => 'json',
+        'completed_at' => 'datetime',
     ];
 
     public function rehabPlan()

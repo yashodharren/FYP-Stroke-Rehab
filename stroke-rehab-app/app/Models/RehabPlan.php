@@ -18,12 +18,16 @@ class RehabPlan extends Model
         'end_date',
         'status',
         'ml_metadata',
+        'feedback_requested',
+        'feedback_requested_at',
     ];
 
     protected $casts = [
         'ml_metadata' => 'json',
         'start_date' => 'date',
         'end_date' => 'date',
+        'feedback_requested' => 'boolean',
+        'feedback_requested_at' => 'datetime',
     ];
 
     public function patient()

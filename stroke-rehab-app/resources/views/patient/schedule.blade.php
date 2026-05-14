@@ -4,6 +4,12 @@
 @section('page_title', 'Weekly Rehabilitation Schedule')
 
 @section('content')
+@if(session('success'))
+<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+    {{ session('success') }}
+</div>
+@endif
+
 @if($activePlan)
 <!-- Calendar View Toggle -->
 <div class="mb-6 flex gap-4">
@@ -39,17 +45,30 @@
                         $exerciseName = $pe->exercise->name;
                         $colorClass = getExerciseColorClass($exerciseName);
                         @endphp
-                        <div class="{{ $colorClass['bg'] }} {{ $colorClass['border'] }} border-l-4 p-2 rounded text-left">
-                            <p class="font-semibold text-sm text-gray-900">{{ $exerciseName }}</p>
-                            <p class="text-xs text-gray-600 mt-1">
+                        <div class="{{ $colorClass['bg'] }} {{ $colorClass['border'] }} border-l-4 p-2 rounded text-left {{ $pe->is_completed ? 'opacity-60' : '' }}">
+                            <div class="flex items-center justify-between mb-1">
+                                <p class="font-semibold text-sm text-gray-900 {{ $pe->is_completed ? 'line-through' : '' }}">{{ $exerciseName }}</p>
+                                @if($pe->is_completed)
+                                <span class="text-green-600 text-xs font-bold">✓</span>
+                                @endif
+                            </div>
+                            <p class="text-xs text-gray-600">
                                 {{ $pe->custom_duration_minutes ?? $pe->exercise->duration_minutes }} min
                             </p>
                             <p class="text-xs text-gray-600">
                                 {{ $pe->custom_repetitions ?? $pe->exercise->repetitions }} reps
                             </p>
-                            <button onclick="showExerciseDetails({{ $pe->id }})" class="text-xs {{ $colorClass['text'] }} hover:opacity-80 mt-2 font-medium">
-                                View Details
-                            </button>
+                            <div class="flex gap-1 mt-2">
+                                <button onclick="showExerciseDetails({{ $pe->id }})" class="text-xs {{ $colorClass['text'] }} hover:opacity-80 font-medium">
+                                    View
+                                </button>
+                                <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
+                                    @csrf
+                                    <button type="submit" class="text-xs {{ $pe->is_completed ? 'text-gray-500' : 'text-green-600' }} hover:opacity-80 font-medium">
+                                        {{ $pe->is_completed ? 'Undo' : 'Done' }}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         @else
                         <span class="text-gray-400 text-sm">—</span>
@@ -74,15 +93,23 @@
             @if($schedule['byDay'][$day]->count() > 0)
             <div class="space-y-4">
                 @foreach($schedule['byDay'][$day] as $planExercise)
-                <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-all" data-plan-exercise-id="{{ $planExercise->id }}">
+                <div class="border {{ $planExercise->is_completed ? 'border-green-300 bg-green-50' : 'border-gray-200' }} rounded-lg p-4 transition-all" data-plan-exercise-id="{{ $planExercise->id }}">
                     <div class="flex justify-between items-start mb-3">
                         <div>
-                            <h3 class="text-lg font-semibold text-gray-900">{{ $planExercise->exercise->name }}</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 {{ $planExercise->is_completed ? 'line-through text-gray-500' : '' }}">{{ $planExercise->exercise->name }}</h3>
                             <p class="text-gray-600 text-sm mt-1">{{ $planExercise->exercise->description }}</p>
+                            @if($planExercise->is_completed && $planExercise->completed_at)
+                            <p class="text-green-600 text-xs mt-1">✓ Completed {{ $planExercise->completed_at->format('M d, Y \a\t H:i') }}</p>
+                            @endif
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {{ $planExercise->frequency_per_week }}x/week
-                        </span>
+                        <div class="flex flex-col items-end gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ $planExercise->frequency_per_week }}x/week
+                            </span>
+                            @if($planExercise->is_completed)
+                            <span class="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Done ✓</span>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
@@ -110,55 +137,65 @@
                         <p class="text-sm text-gray-700"><strong>Instructions:</strong> {{ $planExercise->exercise->instructions }}</p>
                     </div>
 
-                    <form method="POST" action="{{ route('patient.feedback', $planExercise->id) }}" class="space-y-4 border-t border-gray-200 pt-4">
-                        @csrf
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="pain_level_{{ $planExercise->id }}" class="block text-sm font-medium text-gray-700 mb-2">Pain Level (0-10)</label>
-                                <input type="number" id="pain_level_{{ $planExercise->id }}" name="pain_level" min="0" max="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                            </div>
-
-                            <div>
-                                <label for="difficulty_rating_{{ $planExercise->id }}" class="block text-sm font-medium text-gray-700 mb-2">Difficulty (1-5)</label>
-                                <select id="difficulty_rating_{{ $planExercise->id }}" name="difficulty_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    <option value="">Select difficulty</option>
-                                    <option value="1">Very Easy</option>
-                                    <option value="2">Easy</option>
-                                    <option value="3">Moderate</option>
-                                    <option value="4">Hard</option>
-                                    <option value="5">Very Hard</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label for="mood_rating_{{ $planExercise->id }}" class="block text-sm font-medium text-gray-700 mb-2">Mood (1-5)</label>
-                                <select id="mood_rating_{{ $planExercise->id }}" name="mood_rating" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                    <option value="">Select mood</option>
-                                    <option value="1">Very Bad</option>
-                                    <option value="2">Bad</option>
-                                    <option value="3">Neutral</option>
-                                    <option value="4">Good</option>
-                                    <option value="5">Very Good</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label for="comments_{{ $planExercise->id }}" class="block text-sm font-medium text-gray-700 mb-2">Comments</label>
-                            <textarea id="comments_{{ $planExercise->id }}" name="comments" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="How did the exercise feel?"></textarea>
-                        </div>
-
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" name="completed_exercise" value="1" class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500">
-                                <span class="text-sm font-medium text-gray-700">I completed this exercise</span>
-                            </label>
-                            <button type="submit" class="ml-auto bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium text-sm">
-                                Submit Feedback
+                    <div class="border-t border-gray-200 pt-4 flex flex-wrap gap-3 items-start">
+                        <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
+                            @csrf
+                            <button type="submit"
+                                class="{{ $planExercise->is_completed ? 'bg-gray-200 text-gray-600 hover:bg-gray-300' : 'bg-green-600 text-white hover:bg-green-700' }} px-4 py-2 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                                @if($planExercise->is_completed)
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                                Undo Done
+                                @else
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Mark as Done
+                                @endif
                             </button>
-                        </div>
-                    </form>
+                        </form>
+                        <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
+                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm inline-flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Reschedule
+                        </button>
+
+                        <form id="reschedule-form-{{ $planExercise->id }}" method="POST"
+                            action="{{ route('patient.reschedule', $planExercise->id) }}"
+                            class="hidden mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            @csrf
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">New Day</label>
+                                    <select name="day_of_week" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $d)
+                                        <option value="{{ $d }}" @selected($planExercise->day_of_week === $d)>{{ $d }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">New Time</label>
+                                    <input type="time" name="scheduled_time" required
+                                        value="{{ $planExercise->scheduled_time ? substr($planExercise->scheduled_time, 0, 5) : '09:00' }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div class="flex items-end gap-2">
+                                    <button type="submit"
+                                        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm">
+                                        Save
+                                    </button>
+                                    <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
+                                        class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium text-sm">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 @endforeach
             </div>
@@ -192,6 +229,11 @@
         document.getElementById('listViewBtn').classList.add('bg-green-600', 'text-white');
         document.getElementById('calendarViewBtn').classList.remove('bg-green-600', 'text-white');
         document.getElementById('calendarViewBtn').classList.add('bg-gray-300', 'text-gray-700');
+    }
+
+    function toggleReschedule(planExerciseId) {
+        const form = document.getElementById('reschedule-form-' + planExerciseId);
+        if (form) form.classList.toggle('hidden');
     }
 
     function showExerciseDetails(planExerciseId) {

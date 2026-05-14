@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Clinician;
 
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
+use App\Models\PatientFeedback;
 use App\Models\RehabPlan;
 use App\Models\Exercise;
 use App\Models\PlanExercise;
@@ -12,15 +13,7 @@ use Illuminate\Http\Request;
 
 class PlanGeneratorController extends Controller
 {
-    public function indexPlans()
-    {
-        $clinician = auth()->user();
-        $rehabPlans = RehabPlan::where('clinician_id', $clinician->id)->with('patient')->get();
-
-        return view('clinician.plans.index', ['rehabPlans' => $rehabPlans]);
-    }
-
-    public function create($patientId)
+    public function create(Request $request, $patientId)
     {
         $clinician = auth()->user();
         $patient = Patient::findOrFail($patientId);
@@ -33,6 +26,46 @@ class PlanGeneratorController extends Controller
         $mlAvailable = $mlService->isServiceAvailable();
         $mlPrediction = null;
         $mlError = null;
+
+        // Check if this plan creation is based on patient feedback
+        $fromFeedbackPlanId = $request->query('from_feedback');
+        $feedbackSuggestion = null;
+
+        if ($fromFeedbackPlanId) {
+            $feedbackItems = PatientFeedback::where('patient_id', $patient->id)
+                ->where('rehab_plan_id', $fromFeedbackPlanId)
+                ->where('is_plan_feedback', true)
+                ->get();
+
+            if ($feedbackItems->isNotEmpty()) {
+                $avgDifficulty = $feedbackItems->avg('difficulty_rating');
+                $avgPain = $feedbackItems->avg('pain_level');
+
+                // Get the previous plan's difficulty level
+                $prevPlan = RehabPlan::find($fromFeedbackPlanId);
+                $prevDifficulty = $prevPlan ? $prevPlan->difficulty_level : 3;
+
+                // Adjust difficulty based on feedback averages
+                if ($avgDifficulty >= 4 || $avgPain >= 7) {
+                    $suggestedDifficulty = max(1, $prevDifficulty - 1);
+                    $reason = 'exercises were too difficult or painful';
+                } elseif ($avgDifficulty <= 2 && $avgPain <= 2) {
+                    $suggestedDifficulty = min(5, $prevDifficulty + 1);
+                    $reason = 'patient found exercises easy and had low pain';
+                } else {
+                    $suggestedDifficulty = $prevDifficulty;
+                    $reason = 'previous difficulty level was appropriate';
+                }
+
+                $feedbackSuggestion = [
+                    'suggested_difficulty' => $suggestedDifficulty,
+                    'avg_pain' => round($avgPain, 1),
+                    'avg_difficulty' => round($avgDifficulty, 1),
+                    'reason' => $reason,
+                    'overall_comments' => $feedbackItems->first()->overall_comments,
+                ];
+            }
+        }
 
         if ($mlAvailable) {
             try {
@@ -65,6 +98,7 @@ class PlanGeneratorController extends Controller
             'mlPrediction' => $mlPrediction,
             'mlAvailable' => $mlAvailable,
             'mlError' => $mlError,
+            'feedbackSuggestion' => $feedbackSuggestion,
         ]);
     }
 
@@ -467,11 +501,49 @@ class PlanGeneratorController extends Controller
         }
 
         $planName = $plan->plan_name;
+        $patientId = $plan->patient_id;
 
         $plan->delete();
 
-        return redirect()->route('clinician.plans.index')
+        return redirect()->route('clinician.patients.show', $patientId)
             ->with('success', 'Rehabilitation plan "' . $planName . '" has been deleted successfully.');
+    }
+
+    /**
+     * Update the status of a rehab plan.
+     * Enforces "only one active plan per patient" when activating.
+     */
+    public function updateStatus(Request $request, $planId)
+    {
+        $clinician = auth()->user();
+        $plan = RehabPlan::findOrFail($planId);
+
+        if ($plan->clinician_id !== $clinician->id) {
+            abort(403, 'Unauthorized access to this plan.');
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:draft,active,completed,paused',
+        ]);
+
+        $pausedCount = 0;
+
+        // If activating, pause any other active plan for the same patient
+        if ($validated['status'] === 'active') {
+            $pausedCount = RehabPlan::where('patient_id', $plan->patient_id)
+                ->where('id', '!=', $plan->id)
+                ->where('status', 'active')
+                ->update(['status' => 'paused']);
+        }
+
+        $plan->update(['status' => $validated['status']]);
+
+        $message = "Plan status updated to '{$validated['status']}'.";
+        if ($pausedCount > 0) {
+            $message .= " {$pausedCount} previous active plan(s) have been paused.";
+        }
+
+        return back()->with('success', $message);
     }
 
     public function publish($planId)
@@ -483,9 +555,20 @@ class PlanGeneratorController extends Controller
             abort(403, 'Unauthorized access to this plan.');
         }
 
+        // Enforce only one active plan per patient: pause any other currently
+        // active plan(s) for this patient before activating the new one.
+        $pausedCount = RehabPlan::where('patient_id', $plan->patient_id)
+            ->where('id', '!=', $plan->id)
+            ->where('status', 'active')
+            ->update(['status' => 'paused']);
+
         $plan->update(['status' => 'active']);
 
+        $message = $pausedCount > 0
+            ? "Rehabilitation plan published and activated. {$pausedCount} previous active plan(s) have been paused."
+            : 'Rehabilitation plan published and activated.';
+
         return redirect()->route('clinician.patients.show', $plan->patient_id)
-            ->with('success', 'Rehabilitation plan published and activated.');
+            ->with('success', $message);
     }
 }

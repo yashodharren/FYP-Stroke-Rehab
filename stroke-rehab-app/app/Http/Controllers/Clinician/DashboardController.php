@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Clinician;
 
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
+use App\Models\PatientFeedback;
 use App\Models\RehabPlan;
 use App\Models\ClinicianMessage;
 use Illuminate\Http\Request;
@@ -43,15 +44,19 @@ class DashboardController extends Controller
 
         $rehabPlans = $patient->rehabPlans()->with('exercises')->get();
 
+        // Fetch plan-level feedback grouped by plan
+        $planFeedback = PatientFeedback::where('patient_id', $patient->id)
+            ->where('is_plan_feedback', true)
+            ->with('planExercise.exercise')
+            ->orderByDesc('feedback_date')
+            ->get()
+            ->groupBy('rehab_plan_id');
+
         return view('clinician.patients.show', [
             'patient' => $patient,
             'rehabPlans' => $rehabPlans,
+            'planFeedback' => $planFeedback,
         ]);
-    }
-
-    public function appointments()
-    {
-        return view('clinician.appointments.index');
     }
 
     public function deleteMessage($messageId)
