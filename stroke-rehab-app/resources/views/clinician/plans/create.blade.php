@@ -61,18 +61,16 @@
                     <div class="flex items-center gap-2">
                         <span class="text-2xl font-bold text-blue-900">Level {{ $mlPrediction['difficulty_level'] }}/5</span>
                         <span class="text-sm text-blue-600">
-                            @if($mlPrediction['difficulty_level'] == 1)
-                            (Very Easy - Conservative)
-                            @elseif($mlPrediction['difficulty_level'] == 2)
-                            (Easy)
-                            @elseif($mlPrediction['difficulty_level'] == 3)
-                            (Moderate)
-                            @elseif($mlPrediction['difficulty_level'] == 4)
-                            (Hard)
-                            @else
-                            (Very Hard - Intensive)
+                            @if($mlPrediction['difficulty_level'] == 1) (Very Easy - Conservative)
+                            @elseif($mlPrediction['difficulty_level'] == 2) (Easy)
+                            @elseif($mlPrediction['difficulty_level'] == 3) (Moderate)
+                            @elseif($mlPrediction['difficulty_level'] == 4) (Hard)
+                            @else (Very Hard - Intensive)
                             @endif
                         </span>
+                        @if(!empty($feedbackSuggestion))
+                        <span class="ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">Adjusted from patient feedback</span>
+                        @endif
                     </div>
                 </div>
 
@@ -96,7 +94,13 @@
                     <p class="text-sm text-blue-900"><strong>Clinical Notes:</strong> {{ $mlPrediction['clinical_notes'] }}</p>
                 </div>
 
-                <p class="text-sm text-blue-700 mt-4">💡 <strong>Tip:</strong> The AI recommends difficulty level {{ $mlPrediction['difficulty_level'] }}. You can adjust this based on your clinical judgment and patient response.</p>
+                <p class="text-sm text-blue-700 mt-4">💡 <strong>Tip:</strong>
+                    @if(!empty($feedbackSuggestion))
+                    Patient feedback adjusted the difficulty to Level {{ $mlPrediction['difficulty_level'] }}. Exercises shown are filtered to this level. You may further adjust using the form below.
+                    @else
+                    The AI recommends difficulty level {{ $mlPrediction['difficulty_level'] }}. You can adjust this based on your clinical judgment and patient response.
+                    @endif
+                </p>
             </div>
             @elseif($mlError)
             <div class="mb-8 bg-red-50 border-l-4 border-red-500 p-6 rounded">

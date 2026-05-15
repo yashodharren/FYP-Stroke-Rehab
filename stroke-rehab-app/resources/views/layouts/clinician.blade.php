@@ -91,23 +91,66 @@
             <!-- Page Content -->
             <div class="flex-1 overflow-auto">
                 <div class="p-8">
-                    @if(session('success'))
-                    <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-                        {{ session('success') }}
-                    </div>
-                    @endif
-
-                    @if(session('error'))
-                    <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                        {{ session('error') }}
-                    </div>
-                    @endif
-
                     @yield('content')
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none"></div>
+
+    <script>
+        function showToast(message, type) {
+            const colors = {
+                success: {
+                    bg: 'bg-green-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>'
+                },
+                error: {
+                    bg: 'bg-red-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>'
+                },
+                warning: {
+                    bg: 'bg-yellow-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>'
+                },
+                info: {
+                    bg: 'bg-blue-500',
+                    icon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                },
+            };
+            const c = colors[type] || colors.info;
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto flex items-start gap-3 ${c.bg} text-white px-4 py-3 rounded-xl shadow-lg min-w-[280px] max-w-sm translate-x-24 opacity-0 transition-all duration-300`;
+            toast.innerHTML = `
+            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">${c.icon}</svg>
+            <span class="text-sm font-medium flex-1 leading-snug">${message}</span>
+            <button onclick="dismissToast(this.parentElement)" class="ml-1 opacity-70 hover:opacity-100 flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>`;
+            document.getElementById('toast-container').appendChild(toast);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    toast.classList.remove('translate-x-24', 'opacity-0');
+                });
+            });
+            setTimeout(() => dismissToast(toast), 5000);
+        }
+
+        function dismissToast(toast) {
+            toast.classList.add('translate-x-24', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }
+        @if(session('success')) showToast(@json(session('success')), 'success');
+        @endif
+        @if(session('error')) showToast(@json(session('error')), 'error');
+        @endif
+        @if(session('warning')) showToast(@json(session('warning')), 'warning');
+        @endif
+        @if(session('info')) showToast(@json(session('info')), 'info');
+        @endif
+    </script>
 </body>
 
 </html>

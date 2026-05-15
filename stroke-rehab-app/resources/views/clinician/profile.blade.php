@@ -9,12 +9,6 @@
         <p class="text-gray-600 mt-2">Manage your account information and security settings</p>
     </div>
 
-    @if(session('success'))
-    <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-        {{ session('success') }}
-    </div>
-    @endif
-
     @if($errors->any())
     <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
         <ul class="list-disc list-inside">

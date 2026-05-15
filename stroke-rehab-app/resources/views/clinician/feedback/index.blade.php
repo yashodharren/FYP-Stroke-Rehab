@@ -107,25 +107,39 @@
 
                         <div class="border border-gray-200 rounded-lg overflow-hidden">
                             <!-- Session Header (clickable toggle) -->
-                            <button type="button"
-                                onclick="toggleSession('session-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }}')"
-                                class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition text-left">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                                <button type="button"
+                                    onclick="toggleSession('session-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }}')"
+                                    class="flex-1 flex items-center gap-3 text-left">
+                                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
-                                    <span class="text-sm font-semibold text-gray-800">Submitted {{ $sessionDate }}</span>
-                                    <span class="text-xs text-gray-500">{{ $sessionItems->count() }} exercise(s)</span>
-                                </div>
-                                <div class="flex items-center gap-2">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-sm font-semibold text-gray-800">Submitted {{ $sessionDate }}</span>
+                                            <span class="text-xs text-gray-500">{{ $sessionItems->count() }} exercise(s)</span>
+                                        </div>
+                                        <span class="text-xs text-sky-600 font-medium">{{ $patient->user->name }}</span>
+                                    </div>
+                                </button>
+                                <div class="flex items-center gap-2 flex-shrink-0">
                                     <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $painColor }}">Pain {{ $sessionAvgPain }}/10</span>
                                     <span class="px-2 py-0.5 rounded-full text-xs font-bold {{ $diffColor }}">Diff {{ $sessionAvgDiff }}/5</span>
-                                    <svg class="w-4 h-4 text-gray-400 session-chevron-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }} transition-transform"
+                                    <button type="button"
+                                        onclick="confirmDeleteSession('{{ $patientId }}', '{{ $planId }}', '{{ $sessionKey }}')"
+                                        class="ml-1 p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 transition"
+                                        title="Delete this submission">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                    <svg class="w-4 h-4 text-gray-400 session-chevron-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }} transition-transform cursor-pointer"
+                                        onclick="toggleSession('session-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }}')"
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </div>
-                            </button>
+                            </div>
 
                             <!-- Session Body -->
                             <div id="session-{{ $patientId }}-{{ $planId }}-{{ $sessionIdx }}" class="{{ $sessionIdx === 0 ? '' : 'hidden' }} px-4 py-4">
@@ -184,10 +198,27 @@
                     const el = document.getElementById(id);
                     if (!el) return;
                     el.classList.toggle('hidden');
-                    // rotate chevron
-                    const btn = el.previousElementSibling;
-                    const chevron = btn.querySelector('svg:last-child');
+                    const header = el.previousElementSibling;
+                    const chevron = header ? header.querySelector('.transition-transform') : null;
                     if (chevron) chevron.classList.toggle('rotate-180');
+                }
+
+                const deleteFeedbackUrl = "{{ route('clinician.feedback.delete-session') }}";
+
+                function confirmDeleteSession(patientId, planId, sessionKey) {
+                    if (!confirm('Delete all feedback from this submission? This cannot be undone.')) return;
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = deleteFeedbackUrl;
+                    form.innerHTML = `
+                        <input name="_token" value="{{ csrf_token() }}">
+                        <input name="_method" value="DELETE">
+                        <input name="patient_id" value="${patientId}">
+                        <input name="plan_id" value="${planId}">
+                        <input name="session_key" value="${sessionKey}">
+                    `;
+                    document.body.appendChild(form);
+                    form.submit();
                 }
             </script>
         </div>

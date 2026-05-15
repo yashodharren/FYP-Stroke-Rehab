@@ -14,18 +14,6 @@
         </a>
     </div>
 
-    @if(session('success'))
-    <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-        {{ session('success') }}
-    </div>
-    @endif
-
-    @if(session('error'))
-    <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        {{ session('error') }}
-    </div>
-    @endif
-
     <!-- Search Section -->
     <div class="bg-white rounded-lg shadow p-6 mb-8">
         <h2 class="text-xl font-bold text-gray-900 mb-4">Search & Assign Existing Patients</h2>

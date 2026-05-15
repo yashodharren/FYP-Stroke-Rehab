@@ -32,10 +32,22 @@ class PlanGeneratorController extends Controller
         $feedbackSuggestion = null;
 
         if ($fromFeedbackPlanId) {
-            $feedbackItems = PatientFeedback::where('patient_id', $patient->id)
+            // Find the most recent submission session (max feedback_date rounded to minute)
+            $latestSession = PatientFeedback::where('patient_id', $patient->id)
                 ->where('rehab_plan_id', $fromFeedbackPlanId)
                 ->where('is_plan_feedback', true)
-                ->get();
+                ->max('feedback_date');
+
+            $feedbackItems = collect();
+            if ($latestSession) {
+                $sessionMinute = \Carbon\Carbon::parse($latestSession)->format('Y-m-d H:i');
+                $feedbackItems = PatientFeedback::where('patient_id', $patient->id)
+                    ->where('rehab_plan_id', $fromFeedbackPlanId)
+                    ->where('is_plan_feedback', true)
+                    ->get()
+                    ->filter(fn($fb) => $fb->feedback_date &&
+                        \Carbon\Carbon::parse($fb->feedback_date)->format('Y-m-d H:i') === $sessionMinute);
+            }
 
             if ($feedbackItems->isNotEmpty()) {
                 $avgDifficulty = $feedbackItems->avg('difficulty_rating');
@@ -91,6 +103,58 @@ class PlanGeneratorController extends Controller
                 \Log::warning('ML prediction failed: ' . $e->getMessage());
                 $mlError = $e->getMessage();
             }
+        }
+
+        // If feedback suggests a difficulty, override the ML difficulty level so the
+        // display and exercise generation both use the feedback-adjusted level.
+        if (!empty($feedbackSuggestion) && $mlPrediction) {
+            $targetDifficulty = (int) $feedbackSuggestion['suggested_difficulty'];
+            $mlPrediction['difficulty_level'] = $targetDifficulty;
+
+            // Build a progressive mixed-difficulty exercise list:
+            // ~1 exercise at (target-2), ~2 at (target-1), ~3 at target (clamped ≥ 1).
+            $mixedExercises = collect();
+
+            $tiers = [
+                max(1, $targetDifficulty - 2) => 1,
+                max(1, $targetDifficulty - 1) => 2,
+                $targetDifficulty             => 3,
+            ];
+
+            // Collapse duplicate tiers (e.g. when target=1, all map to 1)
+            $tierCounts = [];
+            foreach ($tiers as $level => $count) {
+                $tierCounts[$level] = ($tierCounts[$level] ?? 0) + $count;
+            }
+
+            $targetAreas = $this->getPatientTargetAreas($patient);
+
+            foreach ($tierCounts as $level => $count) {
+                $query = \App\Models\Exercise::where('difficulty_level', $level);
+                if (!empty($targetAreas)) {
+                    $query->whereIn('target_area', $targetAreas);
+                }
+                $exercises = $query->inRandomOrder()->limit($count)->get();
+
+                foreach ($exercises as $ex) {
+                    $mixedExercises->push([
+                        'name'               => $ex->name,
+                        'target_deficit'     => ucfirst(str_replace('_', ' ', $ex->target_area)),
+                        'body_region'        => ucfirst(str_replace('_', ' ', $ex->target_area)),
+                        'difficulty'         => $ex->difficulty_level,
+                        'instructions'       => $ex->instructions,
+                        'frequency_per_week' => 3,
+                        'progression_reps'   => $ex->repetitions ?? null,
+                        'safety_notes'       => null,
+                    ]);
+                }
+            }
+
+            // Sort ascending by difficulty so the list reads easy → hard
+            $mlPrediction['recommended_exercises'] = $mixedExercises
+                ->sortBy('difficulty')
+                ->values()
+                ->all();
         }
 
         return view('clinician.plans.create', [
@@ -180,6 +244,20 @@ class PlanGeneratorController extends Controller
 
             \Log::info('ML Prediction Response:', $mlPrediction);
 
+            // Override ML difficulty with the plan's saved difficulty_level (which already
+            // incorporates any feedback-based adjustment chosen by the clinician)
+            $planDifficulty = (int) $plan->difficulty_level;
+            $targetAreas    = $this->getPatientTargetAreas($patient);
+
+            // Filter recommended exercises to only those at or below the plan's difficulty
+            // and belonging to the patient's deficit areas
+            if (isset($mlPrediction['recommended_exercises'])) {
+                $mlPrediction['recommended_exercises'] = array_filter(
+                    $mlPrediction['recommended_exercises'],
+                    fn($ex) => isset($ex['difficulty']) ? (int)$ex['difficulty'] <= $planDifficulty : true
+                );
+            }
+
             if (isset($mlPrediction['recommended_exercises']) && !empty($mlPrediction['recommended_exercises'])) {
                 // Define day patterns to avoid collisions between exercises
                 // Pattern 1: Monday, Wednesday, Friday (for odd-indexed exercises: 0, 2, 4...)
@@ -202,6 +280,13 @@ class PlanGeneratorController extends Controller
 
                 // Add recommended exercises to the plan
                 foreach ($mlPrediction['recommended_exercises'] as $recommendation) {
+                    // Skip exercises outside the patient's deficit target areas
+                    if (!empty($targetAreas)) {
+                        $exArea = strtolower(str_replace(' ', '_', $recommendation['body_region'] ?? ''));
+                        if (!in_array($exArea, $targetAreas, true)) {
+                            continue;
+                        }
+                    }
                     \Log::info('Processing exercise recommendation:', $recommendation);
 
                     // Find exercise by name (case-insensitive exact match first, then fuzzy match)
@@ -366,6 +451,33 @@ class PlanGeneratorController extends Controller
         }
 
         return back()->with('success', 'Exercise added to plan for ' . count($validated['days_of_week']) . ' day(s).');
+    }
+
+    /**
+     * Derive DB target_area values from the patient's IST deficit flags.
+     * Returns an array of target_area strings to use in whereIn() queries.
+     * Falls back to all areas if no deficits are set.
+     */
+    private function getPatientTargetAreas(Patient $patient): array
+    {
+        $areas = [];
+
+        if ($patient->rdef1) $areas[] = 'face';          // Face Deficit
+        if ($patient->rdef2) $areas[] = 'upper_limb';    // Arm/Hand Deficit
+        if ($patient->rdef3) $areas[] = 'lower_limb';    // Leg/Foot Deficit
+        if ($patient->rdef4) $areas[] = 'face';          // Dysphasia (Speech)
+        if ($patient->rdef5) $areas[] = 'face';          // Hemianopia (Vision)
+        if ($patient->rdef6) {
+            $areas[] = 'lower_limb';
+            $areas[] = 'general';
+        } // Visuospatial
+        if ($patient->rdef7) {
+            $areas[] = 'lower_limb';
+            $areas[] = 'general';
+        } // Brainstem/Cerebellar
+        if ($patient->rdef8) $areas[] = 'general';       // Other Deficits
+
+        return array_unique($areas);
     }
 
     /**

@@ -9,12 +9,6 @@
             <p class="text-gray-600 mt-2">{{ $plan->plan_name }}</p>
         </div>
 
-        @if(session('success'))
-        <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            {{ session('success') }}
-        </div>
-        @endif
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-lg shadow p-6 mb-6">

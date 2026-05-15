@@ -100,6 +100,7 @@ Route::middleware('auth')->group(function () {
         });
 
         Route::get('/feedback', [ClinicianDashboardController::class, 'feedbackIndex'])->name('feedback.index');
+        Route::delete('/feedback/session', [ClinicianDashboardController::class, 'deleteFeedbackSession'])->name('feedback.delete-session');
 
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::delete('/{message}', [ClinicianDashboardController::class, 'deleteMessage'])->name('delete');

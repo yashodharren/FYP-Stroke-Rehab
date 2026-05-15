@@ -5,12 +5,6 @@
 
 @section('content')
 
-@if(session('success'))
-<div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-    {{ session('success') }}
-</div>
-@endif
-
 @if($activePlan)
 @php
 $totalExercises = $planExercises->count();
@@ -65,37 +59,43 @@ $todayName = \Carbon\Carbon::now()->format('l');
     </div>
     <div class="divide-y divide-gray-200">
         @forelse($upcomingExercises as $planExercise)
-        @php $isToday = $planExercise->day_of_week === $todayName; @endphp
-        <div class="px-6 py-4 hover:bg-gray-50 {{ $planExercise->is_completed ? 'bg-green-50' : '' }}">
+        @php
+        $isPast = \Carbon\Carbon::now()->format('H:i') > substr($planExercise->scheduled_time, 0, 5) && !$planExercise->is_completed;
+        @endphp
+        <div class="px-6 py-4 hover:bg-gray-50 {{ $planExercise->is_completed ? 'bg-green-50' : ($isPast ? 'bg-gray-50' : '') }}">
             <div class="flex justify-between items-start">
                 <div>
-                    <h3 class="text-lg font-semibold {{ $planExercise->is_completed ? 'line-through text-gray-400' : 'text-gray-900' }}">{{ $planExercise->exercise->name }}</h3>
-                    <p class="text-gray-600 text-sm mt-1">{{ $planExercise->exercise->description }}</p>
-                    <div class="mt-3 flex gap-4 text-sm text-gray-600">
+                    <h3 class="text-lg font-semibold {{ $planExercise->is_completed ? 'line-through text-gray-400' : ($isPast ? 'text-gray-400' : 'text-gray-900') }}">{{ $planExercise->exercise->name }}</h3>
+                    <p class="text-gray-500 text-sm mt-1">{{ $planExercise->exercise->description }}</p>
+                    <div class="mt-3 flex gap-4 text-sm text-gray-500">
                         <span>📅 {{ $planExercise->day_of_week }}</span>
                         <span>🕐 {{ substr($planExercise->scheduled_time, 0, 5) }}</span>
                         <span>⏱️ {{ $planExercise->custom_duration_minutes ?? $planExercise->exercise->duration_minutes }} min</span>
                         <span>🔄 {{ $planExercise->custom_repetitions ?? $planExercise->exercise->repetitions }} reps</span>
                     </div>
                 </div>
-                @if($isToday)
+                @if($planExercise->is_completed)
                 <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
                     @csrf
-                    <button type="submit"
-                        class="{{ $planExercise->is_completed ? 'bg-gray-200 text-gray-600 hover:bg-gray-300' : 'bg-green-600 text-white hover:bg-green-700' }} px-4 py-2 rounded-lg font-medium text-sm">
-                        {{ $planExercise->is_completed ? 'Undo' : 'Mark Done' }}
+                    <button type="submit" class="bg-gray-200 text-gray-600 hover:bg-gray-300 px-4 py-2 rounded-lg font-medium text-sm">
+                        Undo
                     </button>
                 </form>
-                @elseif($planExercise->is_completed)
-                <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm">✓ Done</span>
+                @elseif($isPast)
+                <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm cursor-not-allowed" title="This exercise time has passed">Missed</span>
                 @else
-                <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm cursor-not-allowed" title="Can only mark today's exercises as done">Locked</span>
+                <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
+                    @csrf
+                    <button type="submit" class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg font-medium text-sm">
+                        Mark Done
+                    </button>
+                </form>
                 @endif
             </div>
         </div>
         @empty
         <div class="px-6 py-4 text-center text-gray-600">
-            No exercises scheduled for the next 24 hours. Check back later!
+            No exercises scheduled for today. Check your weekly schedule!
         </div>
         @endforelse
     </div>

@@ -21,8 +21,8 @@ class DashboardController extends Controller
         $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
         $planExercises = $activePlan ? $activePlan->exercises()->with('exercise')->get() : collect();
 
-        // Filter exercises for next 24 hours
-        $upcomingExercises = $this->getNext24HoursExercises($planExercises);
+        // Filter exercises for today only
+        $upcomingExercises = $this->getTodaysExercises($planExercises);
 
         // Check if feedback should be prompted
         $showFeedbackPrompt = $activePlan ? $this->shouldPromptFeedback($activePlan, $planExercises) : false;
@@ -67,53 +67,126 @@ class DashboardController extends Controller
         $activePlan = $patient->rehabPlans()->where('status', 'active')->first();
         $planExercises = $activePlan ? $activePlan->exercises()->with('exercise')->get() : collect();
 
-        // Overall completion stats
-        $totalExercises = $planExercises->count();
-        $completedExercises = $planExercises->where('is_completed', true)->count();
-        $missedExercises = $totalExercises - $completedExercises;
-        $completionRate = $totalExercises > 0 ? round(($completedExercises / $totalExercises) * 100) : 0;
+        $days      = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        $dayOrder  = array_flip($days);
+        $today     = Carbon::now()->startOfDay();
+        $todayName = Carbon::now()->format('l');
+        $planStart = $activePlan && $activePlan->start_date
+            ? Carbon::parse($activePlan->start_date)->startOfDay()
+            : $today;
 
-        // Per-day breakdown (across the weekly schedule)
-        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        // ── Cumulative totals from plan start to today ──────────────────────
+        // For each exercise slot (day_of_week), count how many times that day
+        // has occurred since the plan started up to and including today.
+        $cumulativeTotal     = 0;
+        $cumulativeCompleted = 0; // = exercises with completed_at set (all-time)
+        $cumulativeMissed    = 0;
+
+        // How many times each weekday has occurred since plan start through today
+        $dayOccurrences = [];
+        foreach ($days as $day) {
+            $dayIndex  = $dayOrder[$day]; // 0=Mon … 6=Sun
+            $first     = $planStart->copy()->next($day);
+            // If plan started on or before that weekday this week, start from plan-start week
+            $firstOccurrence = $planStart->copy()->startOfWeek(Carbon::MONDAY)->addDays($dayIndex);
+            if ($firstOccurrence->lt($planStart)) {
+                $firstOccurrence->addWeek();
+            }
+            $count = 0;
+            if ($firstOccurrence->lte($today)) {
+                $diffDays = $firstOccurrence->diffInDays($today);
+                $count    = (int) floor($diffDays / 7) + 1;
+            }
+            $dayOccurrences[$day] = $count;
+        }
+
+        // Cumulative completed = exercises that have a completed_at timestamp
+        $completedExercises = $planExercises->filter(fn($pe) => $pe->completed_at)->count();
+
+        // Cumulative total = sum of occurrences × exercises scheduled on that day
+        foreach ($days as $day) {
+            $slotCount          = $planExercises->where('day_of_week', $day)->count();
+            $cumulativeTotal   += $dayOccurrences[$day] * $slotCount;
+        }
+
+        // Cumulative missed = past scheduled occurrences not accounted for by completed_at
+        // Since each PlanExercise row is one slot (not one occurrence), we approximate:
+        // missed = total past occurrences - completed
+        $cumulativeMissed = max(0, $cumulativeTotal - $completedExercises);
+        $completionRate   = $cumulativeTotal > 0
+            ? round(($completedExercises / $cumulativeTotal) * 100)
+            : 0;
+
+        // ── Per-day stats for the bar chart (current week view) ─────────────
+        $weekStart  = Carbon::now()->startOfWeek(Carbon::MONDAY)->startOfDay();
+        $weekEnd    = Carbon::now()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $todayOrder = $dayOrder[$todayName];
         $dailyStats = [];
+
         foreach ($days as $day) {
             $dayExercises = $planExercises->where('day_of_week', $day);
-            $dayTotal = $dayExercises->count();
-            $dayDone = $dayExercises->where('is_completed', true)->count();
+            $dayTotal     = $dayExercises->count();
+            $dayDone      = $dayExercises->filter(
+                fn($pe) => $pe->completed_at && $pe->completed_at->between($weekStart, $weekEnd)
+            )->count();
+            $dayPassed = $dayOrder[$day] < $todayOrder;
+            $dayMissed = $dayPassed ? max(0, $dayTotal - $dayDone) : 0;
+
             $dailyStats[$day] = [
-                'total' => $dayTotal,
-                'done'  => $dayDone,
-                'missed' => $dayTotal - $dayDone,
-                'rate'  => $dayTotal > 0 ? round(($dayDone / $dayTotal) * 100) : 0,
+                'total'  => $dayTotal,
+                'done'   => $dayDone,
+                'missed' => $dayMissed,
+                'rate'   => $dayTotal > 0 ? round(($dayDone / $dayTotal) * 100) : 0,
             ];
         }
 
-        // Per-exercise breakdown
+        // ── Cumulative per-day completion rate (plan start → today) ──────────
+        // For each weekday, total due = occurrences × slots on that day.
+        // Completed = exercises on that day that have a completed_at.
+        $cumulativeDayStats = [];
+        foreach ($days as $day) {
+            $slots        = $planExercises->where('day_of_week', $day);
+            $slotCount    = $slots->count();
+            $occurrences  = $dayOccurrences[$day]; // already computed above
+            $totalDue     = $slotCount * $occurrences;
+            $doneCount    = $slots->filter(fn($pe) => (bool) $pe->completed_at)->count();
+
+            $cumulativeDayStats[$day] = [
+                'total'     => $totalDue,
+                'done'      => $doneCount,
+                'rate'      => $totalDue > 0 ? round(($doneCount / $totalDue) * 100) : 0,
+                'label'     => "{$doneCount}/{$totalDue}",
+            ];
+        }
+
+        // Per-exercise breakdown — current status
         $exerciseStats = $planExercises->map(function ($pe) {
             return [
-                'name'        => $pe->exercise->name,
-                'target_area' => $pe->exercise->target_area,
-                'day'         => $pe->day_of_week,
-                'completed'   => $pe->is_completed,
+                'name'         => $pe->exercise->name,
+                'target_area'  => $pe->exercise->target_area,
+                'day'          => $pe->day_of_week,
+                'completed'    => (bool) $pe->completed_at,
                 'completed_at' => $pe->completed_at ? $pe->completed_at->format('M d, Y H:i') : null,
             ];
         })->values();
 
-        // Group completed_at timestamps by date for the activity heatmap (last 30 days)
+        // Activity heatmap — all-time completed_at counts per date
         $completedDates = $planExercises->filter(fn($pe) => $pe->completed_at)
             ->groupBy(fn($pe) => $pe->completed_at->format('Y-m-d'))
             ->map(fn($group) => $group->count())
             ->toArray();
 
         return view('patient.progress', [
-            'activePlan'       => $activePlan,
-            'totalExercises'   => $totalExercises,
+            'activePlan'         => $activePlan,
+            'totalExercises'     => $cumulativeTotal,
             'completedExercises' => $completedExercises,
-            'missedExercises'  => $missedExercises,
-            'completionRate'   => $completionRate,
-            'dailyStats'       => $dailyStats,
-            'exerciseStats'    => $exerciseStats,
-            'completedDates'   => $completedDates,
+            'missedExercises'    => $cumulativeMissed,
+            'completionRate'     => $completionRate,
+            'dailyStats'         => $dailyStats,
+            'cumulativeDayStats' => $cumulativeDayStats,
+            'exerciseStats'      => $exerciseStats,
+            'completedDates'     => $completedDates,
+            'planStart'          => $planStart,
         ]);
     }
 
@@ -334,37 +407,14 @@ class DashboardController extends Controller
         return back()->with('success', 'Feedback submitted successfully.');
     }
 
-    private function getNext24HoursExercises($planExercises)
+    private function getTodaysExercises($planExercises)
     {
-        $now = Carbon::now();
-        $next24Hours = $now->copy()->addHours(24);
-        $dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $todayName = Carbon::now()->format('l'); // e.g. "Friday"
 
-        $upcomingExercises = collect();
-
-        // Iterate through the next 24 hours
-        for ($i = 0; $i < 24; $i++) {
-            $checkTime = $now->copy()->addHours($i);
-            $dayOfWeek = $dayNames[$checkTime->dayOfWeek];
-            $currentHour = $checkTime->format('H');
-
-            // Find exercises for this day and hour
-            $exercisesForTime = $planExercises->filter(function ($pe) use ($dayOfWeek, $currentHour) {
-                if ($pe->day_of_week !== $dayOfWeek) {
-                    return false;
-                }
-
-                // Extract hour from scheduled_time (HH:mm:ss or HH:mm format)
-                $exerciseHour = substr($pe->scheduled_time, 0, 2);
-                return $exerciseHour == $currentHour;
-            });
-
-            $upcomingExercises = $upcomingExercises->merge($exercisesForTime);
-        }
-
-        return $upcomingExercises->unique('id')->sortBy(function ($pe) {
-            return $pe->scheduled_time ?? '23:59';
-        })->values();
+        return $planExercises
+            ->filter(fn($pe) => $pe->day_of_week === $todayName)
+            ->sortBy(fn($pe) => $pe->scheduled_time ?? '23:59')
+            ->values();
     }
 
     private function buildWeeklySchedule($planExercises)
