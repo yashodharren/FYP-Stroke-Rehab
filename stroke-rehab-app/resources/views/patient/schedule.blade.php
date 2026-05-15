@@ -1,7 +1,7 @@
 @extends('layouts.patient')
 
 @section('title', 'Patient Schedule')
-@section('page_title', 'Weekly Rehabilitation Schedule')
+@section('page_title', '')
 
 @section('content')
 @if($activePlan)

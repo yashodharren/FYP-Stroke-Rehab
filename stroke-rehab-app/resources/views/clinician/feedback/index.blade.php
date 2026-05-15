@@ -1,13 +1,9 @@
 @extends('layouts.clinician')
 
-@section('page_title', 'Patient Feedback')
+@section('page_title', '')
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-
-    <div class="mb-6">
-        <p class="text-gray-600">Feedback submitted by patients after completing at least one month of their rehabilitation plan.</p>
-    </div>
 
     @if($feedbackByPatient->isEmpty())
     <div class="bg-white rounded-lg shadow p-12 text-center">

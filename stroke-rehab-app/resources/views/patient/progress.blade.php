@@ -1,7 +1,7 @@
 @extends('layouts.patient')
 
 @section('title', 'My Progress')
-@section('page_title', 'My Progress')
+@section('page_title', '')
 
 @section('content')
 
@@ -16,8 +16,8 @@
 @else
 
 {{-- Plan start indicator --}}
-<div class="mb-4 flex items-center gap-2 text-sm text-gray-500">
-    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="mb-4 flex items-center gap-2 text-base text-gray-500">
+    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
     </svg>
     <span>Cumulative progress since plan started on <strong>{{ $planStart->format('M j, Y') }}</strong></span>
@@ -53,13 +53,13 @@
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
     {{-- Done vs Missed per Day Bar Chart --}}
-    <div class="bg-white rounded-xl shadow p-6">
+    <div class="bg-white border-t-4 border-t-teal-500 rounded-xl shadow p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Exercises Done vs Missed by Day</h2>
         <canvas id="dailyBarChart" height="220"></canvas>
     </div>
 
     {{-- Overall Doughnut Chart --}}
-    <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+    <div class="bg-white border-t-4 border-t-red-500 rounded-xl shadow p-6 flex flex-col items-center">
         <h2 class="text-lg font-bold text-gray-900 mb-4 self-start">Overall Completion</h2>
         <div class="relative w-[400px] h-[400px]">
             <canvas id="completionDoughnut"></canvas>
@@ -76,7 +76,7 @@
 </div>
 
 {{-- Completion Rate per Day Bar --}}
-<div class="bg-white rounded-xl shadow p-6 mb-8">
+<div class="bg-white border-t-4 border-t-yellow-400 rounded-xl shadow p-6 mb-8">
     <h2 class="text-lg font-bold text-gray-900 mb-1">Completion Rate per Day</h2>
     <p class="text-xs text-gray-400 mb-4">Cumulative since plan started — hover to see exercises done vs total</p>
     <canvas id="rateBarChart" height="100"></canvas>

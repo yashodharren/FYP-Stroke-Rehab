@@ -1,7 +1,7 @@
 @extends('layouts.patient')
 
 @section('title', 'Patient Dashboard')
-@section('page_title', 'My Rehabilitation Plan')
+@section('page_title', '')
 
 @section('content')
 
@@ -13,22 +13,22 @@ $completionPct = $totalExercises > 0 ? round(($completedExercises / $totalExerci
 @endphp
 
 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white rounded-xl shadow border-t-4 border-t-amber-500 p-6">
         <p class="text-gray-600 text-sm font-medium">Plan Name</p>
         <p class="text-2xl font-bold text-gray-900">{{ $activePlan->plan_name }}</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white rounded-xl shadow border-t-4 border-t-blue-500 p-6">
         <p class="text-gray-600 text-sm font-medium">Difficulty Level</p>
         <p class="text-2xl font-bold text-gray-900">{{ $activePlan->difficulty_level }}/5</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white rounded-xl shadow border-t-4 border-t-violet-500 p-6">
         <p class="text-gray-600 text-sm font-medium">Total Exercises</p>
         <p class="text-2xl font-bold text-gray-900">{{ $totalExercises }}</p>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-white rounded-xl shadow border-t-4 border-t-emerald-500 p-6">
         <p class="text-gray-600 text-sm font-medium">Completion</p>
         <p class="text-2xl font-bold {{ $completionPct >= 60 ? 'text-green-600' : 'text-gray-900' }}">{{ $completedExercises }}/{{ $totalExercises }}</p>
         <div class="mt-2 bg-gray-200 rounded-full h-2">
@@ -38,8 +38,8 @@ $completionPct = $totalExercises > 0 ? round(($completedExercises / $totalExerci
     </div>
 </div>
 
-<div class="bg-white rounded-lg shadow overflow-hidden mb-8">
-    <div class="px-6 py-4 border-b border-gray-200">
+<div class="bg-white rounded-xl shadow border-t-4 border-t-teal-500 overflow-hidden mb-8">
+    <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="text-xl font-bold text-gray-900">Weekly Schedule</h2>
     </div>
     <div class="p-6">
@@ -52,8 +52,8 @@ $completionPct = $totalExercises > 0 ? round(($completedExercises / $totalExerci
 @php
 $todayName = \Carbon\Carbon::now()->format('l');
 @endphp
-<div class="bg-white rounded-lg shadow overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200">
+<div class="bg-white rounded-xl shadow border-t-4 border-t-blue-500 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-100">
         <h2 class="text-xl font-bold text-gray-900">Today's Exercises — {{ \Carbon\Carbon::now()->format('l, M d') }}</h2>
         <p class="text-gray-500 text-sm mt-1">Only today's exercises can be marked as done.</p>
     </div>
@@ -101,7 +101,7 @@ $todayName = \Carbon\Carbon::now()->format('l');
     </div>
 </div>
 @else
-<div class="bg-white rounded-lg shadow p-8 text-center">
+<div class="bg-white rounded-xl shadow border-t-4 border-t-slate-300 p-8 text-center">
     <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     </svg>

@@ -1,7 +1,7 @@
 @extends('layouts.patient')
 
 @section('title', 'Submit Feedback')
-@section('page_title', 'Submit Plan Feedback')
+@section('page_title', '')
 
 @section('content')
 

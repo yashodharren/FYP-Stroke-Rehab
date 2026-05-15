@@ -8,66 +8,72 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50">
+<body class="bg-slate-50">
     <div class="flex h-screen">
         <!-- Sidebar -->
-        <div class="w-64 bg-gradient-to-b from-sky-500 to-sky-600 text-white shadow-lg flex flex-col">
-            <div class="p-6 border-b border-sky-300">
-                <h1 class="text-2xl font-bold">StrokeRehab</h1>
-                <p class="text-sky-200 text-sm mt-1">Clinician Portal</p>
+        <div class="w-64 bg-slate-900 text-white shadow-xl flex flex-col">
+
+            <!-- Brand -->
+            <div class="px-5 py-4 border-b border-slate-700">
+                <div class="flex items-center gap-3">
+                    <img src="{{ asset('images/logo.png') }}" alt="StrokeRehab Logo" class="w-16 h-16 object-contain flex-shrink-0">
+                    <div>
+                        <h1 class="text-base font-bold leading-tight tracking-tight">StrokeRehab</h1>
+                        <p class="text-xs text-slate-400 leading-tight">Clinician Portal</p>
+                    </div>
+                </div>
             </div>
 
             <!-- User Info -->
-            <div class="p-6 border-b border-sky-300">
-                <p class="text-sm text-sky-200">Logged in as</p>
-                <p class="font-semibold text-white">{{ auth()->user()->name }}</p>
-                <p class="text-xs text-sky-300 mt-1">{{ auth()->user()->email }}</p>
+            <div class="px-6 py-4 border-b border-slate-600">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold flex-shrink-0">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-semibold text-white truncate">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-slate-400 truncate">{{ auth()->user()->email }}</p>
+                    </div>
+                </div>
             </div>
 
             <!-- Navigation Menu -->
-            <nav class="mt-6 flex-1 overflow-y-auto">
-                <div class="px-4 py-2">
-                    <a href="{{ route('clinician.dashboard') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.dashboard')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 11l4-4m0 0l4 4m-4-4v4"></path>
-                        </svg>
-                        <span>Dashboard</span>
-                    </a>
-                </div>
+            <nav class="mt-4 flex-1 overflow-y-auto px-3 space-y-1">
+                <a href="{{ route('clinician.dashboard') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition font-medium
+                    @if(request()->routeIs('clinician.dashboard')) bg-blue-600 text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
 
-                <div class="px-4 py-2">
-                    <a href="{{ route('clinician.patients.index') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.patients.*')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 12H9m6 0a6 6 0 11-12 0 6 6 0 0112 0z"></path>
-                        </svg>
-                        <span>My Patients</span>
-                    </a>
-                </div>
+                <a href="{{ route('clinician.patients.index') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition font-medium
+                    @if(request()->routeIs('clinician.patients.*')) bg-blue-600 text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 5a4 4 0 11-8 0 4 4 0 018 0zM12 12c-4.418 0-8 2.239-8 5v5h16v-5c0-2.761-3.582-5-8-5zM10 18h4M12 16v4" />
+                    </svg>
+                    <span>My Patients</span>
+                </a>
 
-                <div class="px-4 py-2">
-                    <a href="{{ route('clinician.feedback.index') }}"
-                        class="flex items-center gap-3 px-4 py-3 rounded-lg transition
-                       @if(request()->routeIs('clinician.feedback.*')) bg-sky-700 text-white @else text-sky-100 hover:bg-sky-700 @endif">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                        </svg>
-                        <span>Patient Feedback</span>
-                    </a>
-                </div>
-
+                <a href="{{ route('clinician.feedback.index') }}"
+                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition font-medium
+                    @if(request()->routeIs('clinician.feedback.*')) bg-blue-600 text-white @else text-slate-300 hover:bg-slate-800 hover:text-white @endif">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                    </svg>
+                    <span>Patient Feedback</span>
+                </a>
             </nav>
 
             <!-- Logout -->
-            <div class="p-4 border-t border-sky-300">
+            <div class="p-3 border-t border-slate-500">
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sky-100 hover:bg-sky-700 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-200 hover:bg-slate-800 hover:text-white transition font-medium">
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         <span>Logout</span>
                     </button>
@@ -78,12 +84,19 @@
         <!-- Main Content -->
         <div class="flex-1 flex flex-col overflow-hidden">
             <!-- Top Bar -->
-            <div class="bg-white border-b border-gray-200 shadow-sm">
+            <div class="bg-slate-900 border-b border-gray-200 border-l border-l-slate-600 shadow-sm">
                 <div class="px-8 py-4 flex justify-between items-center">
-                    <h2 class="text-2xl font-bold text-gray-900">@yield('page_title', 'Dashboard')</h2>
-                    <div class="flex items-center gap-4">
-                        <span class="text-gray-600">{{ auth()->user()->name }}</span>
-                        <a href="{{ route('clinician.profile.show') }}" class="px-4 py-2 rounded-lg text-sky-600 hover:bg-sky-100 transition font-medium @if(request()->routeIs('clinician.profile.*')) bg-sky-100 text-sky-700 @endif">Profile</a>
+                    <h2 class="text-xl font-bold text-slate-800">@yield('page_title', 'Dashboard')</h2>
+                    <div class="flex items-center gap-3">
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-white">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-slate-400">Clinician</p>
+                        </div>
+                        <a href="{{ route('clinician.profile.show') }}"
+                            class="px-3 py-1.5 rounded-lg text-sm font-medium border transition
+                           @if(request()->routeIs('clinician.profile.*')) bg-teal-50 text-teal-700 border-teal-200 @else bg-teal-600 text-slate-100 border-black hover:bg-teal-500 @endif">
+                            Profile
+                        </a>
                     </div>
                 </div>
             </div>

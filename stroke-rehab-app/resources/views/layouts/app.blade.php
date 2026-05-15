@@ -9,6 +9,7 @@
 </head>
 
 <body class="bg-gray-50">
+    @unless(View::hasSection('hide_nav'))
     <nav class="bg-white shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -30,11 +31,13 @@
             </div>
         </div>
     </nav>
+    @endunless
 
     <main>
         @yield('content')
     </main>
 
+    @unless(View::hasSection('hide_nav'))
     <footer class="bg-white border-t border-gray-200 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <p class="text-center text-gray-600 text-sm">
@@ -42,6 +45,7 @@
             </p>
         </div>
     </footer>
+    @endunless
 </body>
 
 </html>
