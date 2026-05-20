@@ -86,7 +86,7 @@
             <!-- Top Bar -->
             <div class="bg-slate-900 border-b border-gray-200 border-l border-l-slate-600 shadow-sm">
                 <div class="px-8 py-4 flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-slate-800">@yield('page_title', 'Dashboard')</h2>
+                    <h2 class="text-xl font-bold text-red">@yield('page_title', 'Dashboard')</h2>
                     <div class="flex items-center gap-3">
                         <div class="text-right">
                             <p class="text-sm font-medium text-white">{{ auth()->user()->name }}</p>

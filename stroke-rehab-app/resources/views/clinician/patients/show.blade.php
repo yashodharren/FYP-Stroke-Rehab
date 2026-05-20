@@ -14,7 +14,6 @@
                 </a>
                 <h1 class="text-3xl font-bold text-gray-900">{{ $patient->user->name }}</h1>
             </div>
-            <p class="text-gray-600 mt-2">Patient Details & Rehabilitation Plans</p>
         </div>
         <button onclick="deletePatient({{ $patient->id }})" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 font-medium">
             Delete Patient

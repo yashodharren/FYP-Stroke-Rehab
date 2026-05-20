@@ -72,23 +72,27 @@ $dayDates[$d] = $monday->copy()->addDays($i);
                                     View
                                 </button>
                                 @php
-                                $calPast = $day === $todayName && !$pe->is_completed && substr($pe->scheduled_time, 0, 5) < $nowTime;
-                                    @endphp
-                                    @if($pe->is_completed)
-                                    <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-xs text-gray-500 hover:opacity-80 font-medium">Undo</button>
-                                    </form>
-                                    @elseif($calPast)
-                                    <span class="text-xs text-red-400 font-medium" title="Scheduled time has passed">Missed</span>
-                                    @elseif($day === $todayName)
-                                    <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
-                                        @csrf
-                                        <button type="submit" class="text-xs text-green-600 hover:opacity-80 font-medium">Done</button>
-                                    </form>
-                                    @else
-                                    <span class="text-xs text-gray-400 cursor-not-allowed" title="Only today's exercises can be marked">🔒</span>
-                                    @endif
+                                $dayIndex = array_search($day, ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
+                                $todayIndex = array_search($todayName, ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
+                                $isPastDay = $dayIndex < $todayIndex;
+                                    $isTodayPast=$day===$todayName && !$pe->is_completed && substr($pe->scheduled_time, 0, 5) < $nowTime;
+                                        $calMissed=!$pe->is_completed && ($isPastDay || $isTodayPast);
+                                        @endphp
+                                        @if($pe->is_completed)
+                                        <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-xs text-gray-500 hover:opacity-80 font-medium">Undo</button>
+                                        </form>
+                                        @elseif($calMissed)
+                                        <span class="text-xs text-red-400 font-medium" title="Scheduled time has passed">Missed</span>
+                                        @elseif($day === $todayName)
+                                        <form method="POST" action="{{ route('patient.mark-done', $pe->id) }}" class="inline">
+                                            @csrf
+                                            <button type="submit" class="text-xs text-green-600 hover:opacity-80 font-medium">Done</button>
+                                        </form>
+                                        @else
+                                        <span class="text-xs text-gray-400 cursor-not-allowed" title="Only today's exercises can be marked">🔒</span>
+                                        @endif
                             </div>
                         </div>
                         @else
@@ -166,90 +170,94 @@ $dayDates[$d] = $monday->copy()->addDays($i);
 
                     <div class="border-t border-gray-200 pt-4 flex flex-wrap gap-3 items-start">
                         @php
-                        $listPast = $day === $todayName && !$planExercise->is_completed && substr($planExercise->scheduled_time, 0, 5) < $nowTime;
-                            @endphp
-                            @if($planExercise->is_completed)
-                            <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
-                                @csrf
-                                <button type="submit" class="bg-gray-200 text-gray-600 hover:bg-gray-300 px-4 py-2 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                        $listDayIndex = array_search($day, ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
+                        $listTodayIndex = array_search($todayName, ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']);
+                        $listIsPastDay = $listDayIndex < $listTodayIndex;
+                            $listIsTodayPast=$day===$todayName && !$planExercise->is_completed && substr($planExercise->scheduled_time, 0, 5) < $nowTime;
+                                $listMissed=!$planExercise->is_completed && ($listIsPastDay || $listIsTodayPast);
+                                @endphp
+                                @if($planExercise->is_completed)
+                                <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
+                                    @csrf
+                                    <button type="submit" class="bg-gray-200 text-gray-600 hover:bg-gray-300 px-4 py-2 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        Undo Done
+                                    </button>
+                                </form>
+                                @elseif($listMissed)
+                                <span class="px-4 py-2 bg-red-50 text-red-400 border border-red-200 rounded-lg font-medium text-sm inline-flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
                                     </svg>
-                                    Undo Done
-                                </button>
-                            </form>
-                            @elseif($listPast)
-                            <span class="px-4 py-2 bg-red-50 text-red-400 border border-red-200 rounded-lg font-medium text-sm inline-flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
-                                </svg>
-                                Missed
-                            </span>
-                            @elseif($day === $todayName)
-                            <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
-                                @csrf
-                                <button type="submit" class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                                    Missed
+                                </span>
+                                @elseif($day === $todayName)
+                                <form method="POST" action="{{ route('patient.mark-done', $planExercise->id) }}">
+                                    @csrf
+                                    <button type="submit" class="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-lg font-medium text-sm inline-flex items-center gap-2">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        Mark as Done
+                                    </button>
+                                </form>
+                                @elseif($planExercise->is_completed)
+                                <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm inline-flex items-center gap-2">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                     </svg>
-                                    Mark as Done
+                                    Completed
+                                </span>
+                                @else
+                                <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm inline-flex items-center gap-2 cursor-not-allowed" title="Only today's exercises can be marked as done">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                                    </svg>
+                                    {{ $day === $todayName ? 'Mark as Done' : 'Locked' }}
+                                </span>
+                                @endif
+                                <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm inline-flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    Reschedule
                                 </button>
-                            </form>
-                            @elseif($planExercise->is_completed)
-                            <span class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium text-sm inline-flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                Completed
-                            </span>
-                            @else
-                            <span class="px-4 py-2 bg-gray-100 text-gray-400 rounded-lg font-medium text-sm inline-flex items-center gap-2 cursor-not-allowed" title="Only today's exercises can be marked as done">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                                </svg>
-                                {{ $day === $todayName ? 'Mark as Done' : 'Locked' }}
-                            </span>
-                            @endif
-                            <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
-                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm inline-flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                Reschedule
-                            </button>
 
-                            <form id="reschedule-form-{{ $planExercise->id }}" method="POST"
-                                action="{{ route('patient.reschedule', $planExercise->id) }}"
-                                class="hidden mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                @csrf
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">New Day</label>
-                                        <select name="day_of_week" required
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                            @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $d)
-                                            <option value="{{ $d }}" @selected($planExercise->day_of_week === $d)>{{ $d }}</option>
-                                            @endforeach
-                                        </select>
+                                <form id="reschedule-form-{{ $planExercise->id }}" method="POST"
+                                    action="{{ route('patient.reschedule', $planExercise->id) }}"
+                                    class="hidden mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    @csrf
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">New Day</label>
+                                            <select name="day_of_week" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                                @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $d)
+                                                <option value="{{ $d }}" @selected($planExercise->day_of_week === $d)>{{ $d }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-2">New Time</label>
+                                            <input type="time" name="scheduled_time" required
+                                                value="{{ $planExercise->scheduled_time ? substr($planExercise->scheduled_time, 0, 5) : '09:00' }}"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        </div>
+                                        <div class="flex items-end gap-2">
+                                            <button type="submit"
+                                                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm">
+                                                Save
+                                            </button>
+                                            <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
+                                                class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium text-sm">
+                                                Cancel
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">New Time</label>
-                                        <input type="time" name="scheduled_time" required
-                                            value="{{ $planExercise->scheduled_time ? substr($planExercise->scheduled_time, 0, 5) : '09:00' }}"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                    </div>
-                                    <div class="flex items-end gap-2">
-                                        <button type="submit"
-                                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm">
-                                            Save
-                                        </button>
-                                        <button type="button" onclick="toggleReschedule({{ $planExercise->id }})"
-                                            class="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 font-medium text-sm">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
+                                </form>
                     </div>
                 </div>
                 @endforeach
